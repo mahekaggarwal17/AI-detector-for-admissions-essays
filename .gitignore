@@ -17,5 +17,8 @@ frontend/node_modules/
 frontend/dist/
 .DS_Store
 
-# Logs
+# Logs & Local Databases & Env
 *.log
+*.db
+.env
+

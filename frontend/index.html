@@ -29,6 +29,9 @@
     referrerpolicy="no-referrer"
   />
 
+  <!-- Google Identity Services (OAuth) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -53,6 +56,19 @@
         <span class="status-text">FastAPI :8000</span>
       </div>
     </div>
+
+    <!-- Mobile User Profile Block (If Logged In) -->
+    <div id="mobile-user-block" class="mobile-user-card" hidden>
+      <img id="mobile-user-avatar" src="" alt="Avatar" class="mobile-avatar-img" />
+      <div class="mobile-user-meta">
+        <div id="mobile-user-name" class="mobile-user-name">User Name</div>
+        <div id="mobile-user-role" class="mobile-user-role">Admissions Officer</div>
+      </div>
+      <button id="mobile-logout-btn" class="mobile-signout-btn" title="Sign Out">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+
     <a href="#detector" class="mobile-nav-link active" data-action="open-detector">
       <i class="fa-solid fa-wand-magic-sparkles"></i> Live Detector
     </a>
@@ -62,6 +78,9 @@
     <a href="#benchmark" class="mobile-nav-link" data-action="open-benchmark">
       <i class="fa-solid fa-chart-line"></i> Benchmark (92.7%)
     </a>
+    <button id="mobile-history-link" class="mobile-nav-link" data-action="open-history" hidden>
+      <i class="fa-solid fa-clock-rotate-left"></i> My Essay Scans
+    </button>
     <a
       href="https://github.com/mahekaggarwal17/AI-detector-for-admissions-essays"
       target="_blank"
@@ -70,9 +89,15 @@
     >
       <i class="fa-brands fa-github"></i> Backend GitHub
     </a>
-    <button class="mobile-cta-btn" id="mobile-quick-analyze-btn">
-      <i class="fa-solid fa-bolt"></i> Quick Analyze
-    </button>
+    
+    <div class="mobile-menu-bottom">
+      <button class="mobile-cta-btn" id="mobile-quick-analyze-btn">
+        <i class="fa-solid fa-bolt"></i> Quick Analyze
+      </button>
+      <button class="mobile-auth-btn" id="mobile-auth-open-btn">
+        <i class="fa-solid fa-user-lock"></i> Sign In / Register
+      </button>
+    </div>
   </nav>
 
   <!-- Page Viewport Container -->
@@ -97,18 +122,52 @@
         >GitHub</a>
       </nav>
 
-      <!-- Backend Connection Status Pill & GitHub Link -->
+      <!-- Header Actions: Auth State & Backend Pill -->
       <div class="header-actions">
+        <!-- Guest State: Sign In Button -->
+        <button id="auth-modal-trigger" class="sign-in-btn" title="Sign In or Register">
+          <i class="fa-solid fa-user-circle"></i>
+          <span>Sign In</span>
+        </button>
+
+        <!-- Authenticated State: User Dropdown -->
+        <div id="user-profile-menu" class="user-menu-container" hidden>
+          <button id="user-menu-btn" class="user-profile-pill" aria-expanded="false" aria-haspopup="true">
+            <img id="user-avatar-img" src="" alt="Avatar" class="user-avatar-mini" />
+            <span id="user-display-name" class="user-display-name">Officer</span>
+            <i class="fa-solid fa-chevron-down user-chevron"></i>
+          </button>
+          
+          <div id="user-dropdown-card" class="user-dropdown-card" hidden>
+            <div class="user-dropdown-header">
+              <div id="dropdown-user-name" class="user-full-name">Name</div>
+              <div id="dropdown-user-email" class="user-email">email@admissions.edu</div>
+              <div id="dropdown-user-role" class="user-role-tag">Admissions Officer</div>
+            </div>
+            <div class="user-dropdown-items">
+              <button class="dropdown-item" data-action="open-history">
+                <i class="fa-solid fa-clock-rotate-left"></i> My Essay Scans
+              </button>
+              <button class="dropdown-item" data-action="open-detector">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> New Scan
+              </button>
+              <button id="logout-action-btn" class="dropdown-item danger">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+
         <a
           href="https://github.com/mahekaggarwal17/AI-detector-for-admissions-essays"
           target="_blank"
           rel="noopener noreferrer"
-          class="sign-in-btn"
+          class="engine-status-pill"
           id="backend-status-pill"
-          title="FastAPI Backend Status (127.0.0.1:8000)"
+          title="FastAPI Backend (127.0.0.1:8000)"
         >
           <span class="status-indicator"></span>
-          <span class="status-label">Engine Online</span>
+          <span class="status-label">Online</span>
         </a>
       </div>
 
@@ -214,7 +273,157 @@
   </div>
 
   <!-- =========================================================================
-       MODAL 1: Live Essay Detector Modal (Connected to FastAPI /api/analyze)
+       MODAL: Authentication (Sign In, Register & Google OAuth)
+       ========================================================================= -->
+  <div id="auth-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge auth-badge"><i class="fa-solid fa-user-shield"></i></div>
+          <div>
+            <h2 id="auth-modal-title" class="modal-title">VERITAS Admissions Portal</h2>
+            <p class="modal-subtitle">Sign in or register to save essay audit logs &amp; full reports</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal aria-label="Close auth modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Auth Tabs Switcher -->
+      <div class="auth-tabs-nav">
+        <button id="tab-login-btn" class="auth-tab-btn active" data-tab="login">Sign In</button>
+        <button id="tab-register-btn" class="auth-tab-btn" data-tab="register">Create Account</button>
+      </div>
+
+      <!-- Error / Success Alert Box -->
+      <div id="auth-alert-box" class="auth-alert-box" hidden></div>
+
+      <!-- Google OAuth One-Click Button -->
+      <div class="google-auth-section">
+        <button id="google-auth-trigger-btn" class="google-auth-button">
+          <svg class="google-svg" viewBox="0 0 24 24" width="18" height="18">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.36 7.36 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.99 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.29 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+        <!-- Container for GIS official rendered button fallback -->
+        <div id="g_id_signin" class="g-signin-hidden"></div>
+      </div>
+
+      <div class="auth-divider">
+        <span>or continue with email</span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email" class="form-label">Work / University Email</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="login-email" class="form-input" placeholder="officer@university.edu" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password" class="form-label">Password</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required />
+            <button type="button" class="pwd-toggle-btn" data-toggle-pwd="login-password" aria-label="Toggle password visibility">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="auth-submit-btn">
+          <span>Sign In to Dashboard</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="auth-form" hidden>
+        <div class="form-group">
+          <label for="reg-name" class="form-label">Full Name</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input type="text" id="reg-name" class="form-input" placeholder="Dean Jane Doe" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-email" class="form-label">Work / University Email</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="reg-email" class="form-input" placeholder="dean.doe@college.edu" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-role" class="form-label">Admissions Role</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-id-badge input-icon"></i>
+            <select id="reg-role" class="form-select">
+              <option value="Admissions Officer">Admissions Officer / Reader</option>
+              <option value="Admissions Dean">Dean of Admissions</option>
+              <option value="High School Counselor">High School Counselor</option>
+              <option value="Student / Applicant">Applicant / Student</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-password" class="form-label">Create Password (min 6 characters)</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="reg-password" class="form-input" placeholder="Choose a secure password" minlength="6" required />
+            <button type="button" class="pwd-toggle-btn" data-toggle-pwd="reg-password" aria-label="Toggle password visibility">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="register-submit-btn" class="auth-submit-btn">
+          <span>Create Account</span>
+          <i class="fa-solid fa-user-plus"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: My Essay Scans & History (Authenticated Users)
+       ========================================================================= -->
+  <div id="history-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card history-modal-card" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div>
+            <h2 id="history-modal-title" class="modal-title">My Essay Audit Logs</h2>
+            <p class="modal-subtitle">All admissions essay scans saved under your account</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal aria-label="Close history modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="history-scans-list" class="history-list">
+        <div class="history-empty">
+          <i class="fa-solid fa-file-circle-check"></i>
+          <p>No saved scans yet. Run an analysis while signed in to log your audits.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: Live Essay Detector Modal (Connected to FastAPI /api/analyze)
        ========================================================================= -->
   <div id="detector-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detector-modal-title">
@@ -362,7 +571,7 @@
   </div>
 
   <!-- =========================================================================
-       MODAL 2: 275+ Corpus Dataset Modal
+       MODAL: 275+ Corpus Dataset Modal
        ========================================================================= -->
   <div id="corpus-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-card corpus-card-modal" role="dialog" aria-modal="true" aria-labelledby="corpus-modal-title">
@@ -410,7 +619,7 @@
   </div>
 
   <!-- =========================================================================
-       MODAL 3: Benchmark & Evaluation Report Modal
+       MODAL: Benchmark & Evaluation Report Modal
        ========================================================================= -->
   <div id="benchmark-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-card benchmark-card-modal" role="dialog" aria-modal="true" aria-labelledby="benchmark-modal-title">
