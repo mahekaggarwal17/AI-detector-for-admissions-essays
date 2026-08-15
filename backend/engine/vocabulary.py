@@ -39,7 +39,7 @@ AI_PHRASE_MARKERS = [
     "resonate deeply", "resonates with me", "resonated with my",
     "sparked my curiosity", "ignited a fire", "ignited my passion",
     "passionate advocate", "fervent desire", "eager to contribute",
-    "not only... but also", "a testament to the fact", "it is worth noting",
+    "not only", "but also", "a testament to the fact", "it is worth noting",
     "in today's rapidly evolving world", "in an ever-changing world",
     "ever-evolving landscape", "dynamic world of",
     "unravel the complexities", "navigating the intricacies", "complexities of human",

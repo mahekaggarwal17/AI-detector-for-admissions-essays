@@ -23,9 +23,9 @@ class AIDetectorEngine:
         if not clean:
             return []
         
-        # Regex split on sentence boundaries
-        raw_sentences = re.split(r'(?<=[.!?])\s+', clean)
-        sentences = [s.strip() for s in raw_sentences if s.strip()]
+        # Regex split on sentence boundaries, supporting closing quotes/parentheses with fixed-width lookbehinds
+        raw_sentences = re.split(r'(?:(?<=[.!?])|(?<=[.!?]["\'\)\]]))\s+', clean)
+        sentences = [s.strip() for s in raw_sentences if s.strip() and re.search(r'[a-zA-Z0-9]', s)]
         return sentences
 
     def analyze_essay(self, text: str) -> Dict:

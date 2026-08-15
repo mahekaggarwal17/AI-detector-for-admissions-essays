@@ -1,8 +1,13 @@
+import os
+import sys
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional
+
+# Ensure the backend directory is in sys.path regardless of how the script is invoked
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from engine.detector import AIDetectorEngine
 from data.samples import SAMPLE_ESSAYS

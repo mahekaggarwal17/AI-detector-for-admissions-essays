@@ -20,7 +20,8 @@ COMMON_WORD_TRANSITIONS = {
     ("not", "only", "did"): 0.84,
     ("shaping", "my", "understanding"): 0.87,
     ("underscores", "the", "importance"): 0.90,
-    ("in", "today's", "world"): 0.89,
+    ("in", "today", "s"): 0.89,
+    ("in", "todays", "world"): 0.89,
 }
 
 class PerplexityAnalyzer:
