@@ -88,14 +88,18 @@ function initMobileMenu() {
   const openMenu = () => {
     burgerBtn.setAttribute("aria-expanded", "true");
     overlay.removeAttribute("hidden");
+    overlay.classList.add("open");
     mobileMenu.removeAttribute("hidden");
+    mobileMenu.classList.add("open");
     document.body.classList.add("menu-open");
   };
 
   const closeMenu = () => {
     burgerBtn.setAttribute("aria-expanded", "false");
     overlay.setAttribute("hidden", "");
+    overlay.classList.remove("open");
     mobileMenu.setAttribute("hidden", "");
+    mobileMenu.classList.remove("open");
     document.body.classList.remove("menu-open");
   };
 

@@ -573,6 +573,11 @@ body {
 /* ==========================================================================
    Mobile Navigation Overlay & Sheet Styles
    ========================================================================== */
+.mobile-overlay,
+.mobile-menu-sheet {
+  display: none !important;
+}
+
 .mobile-overlay {
   position: fixed;
   inset: 0;
@@ -594,10 +599,19 @@ body {
   padding: 22px 18px 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   z-index: 101;
-  display: flex;
   flex-direction: column;
   gap: 8px;
   animation: menuIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (max-width: 720px) {
+  .mobile-overlay.open {
+    display: block !important;
+  }
+
+  .mobile-menu-sheet.open {
+    display: flex !important;
+  }
 }
 
 .mobile-nav-link {
