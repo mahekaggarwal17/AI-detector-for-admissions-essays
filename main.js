@@ -353,22 +353,24 @@ async function runDetection(text) {
  * Render Detection Results on Dashboard
  */
 function renderDetectionResults(data) {
-  const probVal = data.ai_probability != null ? Math.round(data.ai_probability * 100) : 0;
+  const probRaw = data.overall_ai_probability != null ? data.overall_ai_probability : (data.ai_probability != null ? data.ai_probability * 100 : 0);
+  const probVal = Math.round(probRaw);
+
   const probNumberEl = document.getElementById("ai-prob-number");
   const circleBar = document.getElementById("score-circle-bar");
   const verdictBadge = document.getElementById("verdict-badge");
   const verdictSummary = document.getElementById("verdict-summary");
   const eslBadge = document.getElementById("esl-safeguard-badge");
 
-  // Prob Number & Gauge (circumference = 264)
+  // Prob Number & Circular Gauge (circumference = 264)
   if (probNumberEl) probNumberEl.textContent = `${probVal}%`;
   if (circleBar) {
     const offset = 264 - (264 * probVal) / 100;
     circleBar.style.strokeDashoffset = offset;
 
-    if (probVal < 35) {
+    if (probVal < 38) {
       circleBar.style.stroke = "var(--accent-green)";
-    } else if (probVal < 65) {
+    } else if (probVal < 70) {
       circleBar.style.stroke = "var(--accent-amber)";
     } else {
       circleBar.style.stroke = "var(--accent-red)";
@@ -377,65 +379,82 @@ function renderDetectionResults(data) {
 
   // Verdict Pill
   if (verdictBadge) {
+    const verdict = data.overall_verdict || (probVal >= 70 ? "Likely AI-Generated" : probVal >= 38 ? "Mixed / AI-Polished" : "Likely Human-Written");
     verdictBadge.className = "verdict-pill";
-    if (probVal < 35) {
+    verdictBadge.textContent = verdict;
+
+    if (probVal < 38) {
       verdictBadge.classList.add("human");
-      verdictBadge.textContent = "Likely Human-Written";
-    } else if (probVal < 65) {
+    } else if (probVal < 70) {
       verdictBadge.classList.add("hybrid");
-      verdictBadge.textContent = "Mixed / AI-Polished";
     } else {
       verdictBadge.classList.add("ai");
-      verdictBadge.textContent = "Likely AI-Generated";
     }
   }
 
+  // Verdict Summary / Evidence Explanation
   if (verdictSummary) {
-    verdictSummary.textContent =
-      data.summary ||
-      (probVal < 35
-        ? "Natural sentence length variance and organic vocabulary distribution characteristic of genuine applicant voice."
-        : probVal < 65
-        ? "Detected subtle formulaic transitions or lexical polishing typical of AI editing on human drafts."
-        : "Low token surprisal, uniform sentence lengths, and high density of over-represented admissions clichés.");
+    if (data.evidence_summary && data.evidence_summary.sentence_distribution) {
+      verdictSummary.textContent = `${data.evidence_summary.sentence_distribution} ${data.evidence_summary.key_observations?.[0]?.detail || ""}`;
+    } else {
+      verdictSummary.textContent =
+        data.summary ||
+        (probVal < 38
+          ? "Natural sentence length variance and organic vocabulary distribution characteristic of genuine applicant voice."
+          : probVal < 70
+          ? "Detected subtle formulaic transitions or lexical polishing typical of AI editing on human drafts."
+          : "Low token surprisal, uniform sentence lengths, and high density of over-represented admissions clichés.");
+    }
   }
 
   // ESL Safeguard Status
+  const isESL = data.esl_safeguard?.is_esl_candidate || data.esl_safeguard_applied;
   if (eslBadge) {
-    eslBadge.hidden = !data.esl_safeguard_applied;
+    eslBadge.hidden = !isESL;
+    if (isESL && data.esl_safeguard?.explanation) {
+      eslBadge.title = data.esl_safeguard.explanation;
+    }
   }
 
-  // 4 Feature Metric Cards
-  const burstiness = data.burstiness?.goh_barabasi ?? 0.38;
-  const perplexity = data.perplexity?.overall_perplexity ?? 48.2;
-  const entropy = data.vocabulary?.entropy ?? 4.2;
-  const buzzwords = data.vocabulary?.buzzword_count ?? 0;
+  // 4 Feature Metric Cards from Backend Stats
+  const burstiness = data.stats?.burstiness_index ?? (data.burstiness?.goh_barabasi ?? 0.38);
+  const perplexity = data.stats?.overall_perplexity ?? (data.perplexity?.overall_perplexity ?? 18.5);
+  const entropy = data.stats?.shannon_entropy ?? (data.vocabulary?.entropy ?? 6.2);
+  const buzzwords = Array.isArray(data.stats?.ai_phrase_triggers) ? data.stats.ai_phrase_triggers.length : (data.vocabulary?.buzzword_count ?? 0);
 
-  document.getElementById("metric-burstiness").textContent = `B = ${burstiness.toFixed(2)}`;
-  document.getElementById("bar-burstiness").style.width = `${Math.min(burstiness * 120, 100)}%`;
+  document.getElementById("metric-burstiness").textContent = `B = ${typeof burstiness === "number" ? burstiness.toFixed(2) : burstiness}`;
+  document.getElementById("bar-burstiness").style.width = `${Math.min(Math.abs(burstiness) * 100, 100)}%`;
 
-  document.getElementById("metric-perplexity").textContent = `${perplexity.toFixed(1)} PPL`;
-  document.getElementById("bar-perplexity").style.width = `${Math.min(perplexity * 1.5, 100)}%`;
+  document.getElementById("metric-perplexity").textContent = `${typeof perplexity === "number" ? perplexity.toFixed(1) : perplexity} PPL`;
+  document.getElementById("bar-perplexity").style.width = `${Math.min(perplexity * 5, 100)}%`;
 
-  document.getElementById("metric-entropy").textContent = `${entropy.toFixed(2)} bits`;
-  document.getElementById("bar-entropy").style.width = `${Math.min(entropy * 20, 100)}%`;
+  document.getElementById("metric-entropy").textContent = `${typeof entropy === "number" ? entropy.toFixed(2) : entropy} bits`;
+  document.getElementById("bar-entropy").style.width = `${Math.min(entropy * 14, 100)}%`;
 
   document.getElementById("metric-buzzwords").textContent = `${buzzwords} matches`;
-  document.getElementById("bar-buzzwords").style.width = `${Math.min(buzzwords * 20, 100)}%`;
+  document.getElementById("bar-buzzwords").style.width = `${Math.min(buzzwords * 15, 100)}%`;
 
   // Sentence-Level Highlights
   const listEl = document.getElementById("sentence-breakdown-list");
-  if (listEl && data.sentence_analysis && data.sentence_analysis.length) {
-    listEl.innerHTML = data.sentence_analysis
+  const sentences = data.sentence_highlights || data.sentence_analysis || [];
+
+  if (listEl && sentences.length) {
+    listEl.innerHTML = sentences
       .map((s, idx) => {
-        const p = s.ai_probability || 0;
+        const p = s.ai_probability != null ? (s.ai_probability > 1 ? s.ai_probability : s.ai_probability * 100) : 0;
         let type = "human";
-        if (p >= 0.65) type = "machine";
-        else if (p >= 0.35) type = "suspicious";
+        if (p >= 65 || s.highlight_color === "red") type = "machine";
+        else if (p >= 35 || s.highlight_color === "yellow") type = "suspicious";
+
+        const text = s.text || s.sentence || "";
+        const reason = s.reason ? `<div style="font-size: 10.5px; color: #a1a1aa; margin-top: 2px;">↳ ${escapeHtml(s.reason)}</div>` : "";
 
         return `<div class="sentence-item ${type}">
-          <strong>[S${idx + 1}]</strong> ${escapeHtml(s.sentence)}
-          <span style="float: right; color: var(--muted); font-size: 10px; font-family: var(--font-mono)">${Math.round(p * 100)}% AI</span>
+          <div>
+            <strong>[S${idx + 1}]</strong> ${escapeHtml(text)}
+            <span style="float: right; color: var(--muted); font-size: 10px; font-family: var(--font-mono);">${Math.round(p)}% AI</span>
+          </div>
+          ${reason}
         </div>`;
       })
       .join("");
@@ -457,11 +476,11 @@ function resetResults() {
 }
 
 /**
- * Client-Side Statistical Evaluator Fallback
+ * Client-Side Statistical Evaluator Fallback (when offline)
  */
 function simulateStatisticalDetection(text) {
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-  const buzzwordsList = ["tapestry", "multifaceted", "testament", "pivotal", "invaluable", "resolve", "catalyst", "nestled", "transformative", "delve", "underscored", "beacon", "foster"];
+  const buzzwordsList = ["tapestry", "multifaceted", "testament", "pivotal", "invaluable", "resolve", "catalyst", "nestled", "transformative", "delve", "underscored", "beacon", "foster", "intricacies", "unwavering"];
   const lower = text.toLowerCase();
   let buzzwordCount = 0;
   buzzwordsList.forEach((w) => {
@@ -477,22 +496,24 @@ function simulateStatisticalDetection(text) {
   let isAI = lower.includes("tapestry") || lower.includes("testament") || buzzwordCount >= 3;
   let isESL = lower.includes("not speak good") || lower.includes("very hard for me");
 
-  let prob = isAI ? 0.94 : isESL ? 0.12 : 0.08;
+  let prob = isAI ? 82.6 : isESL ? 32.0 : 18.4;
 
   return {
-    ai_probability: prob,
-    esl_safeguard_applied: isESL,
-    burstiness: { goh_barabasi: burstiness },
-    perplexity: { overall_perplexity: isAI ? 22.4 : 54.8 },
-    vocabulary: { entropy: 4.12, buzzword_count: buzzwordCount },
-    summary: isESL
-      ? "ESL Non-Native Safeguard applied: decoupled simple syntactic variance from machine generation."
-      : isAI
-      ? "High admissions cliché concentration with uniform sentence transitions detected."
-      : "Organic human variance, uneven sentence pacing, and personalized concrete imagery detected.",
-    sentence_analysis: sentences.map((s) => ({
-      sentence: s.trim(),
-      ai_probability: isAI ? 0.88 : isESL ? 0.15 : 0.08
+    overall_ai_probability: prob,
+    overall_verdict: prob >= 70 ? "Likely AI-Generated" : prob >= 38 ? "Mixed / AI-Polished" : "Likely Human-Written",
+    esl_safeguard: { is_esl_candidate: isESL, explanation: "ESL Non-Native Safeguard applied." },
+    stats: {
+      burstiness_index: burstiness,
+      overall_perplexity: isAI ? 11.4 : 38.2,
+      shannon_entropy: 6.45,
+      ai_phrase_triggers: buzzwordsList.filter((w) => lower.includes(w)).map((w) => ({ phrase: w }))
+    },
+    sentence_highlights: sentences.map((s, idx) => ({
+      id: idx,
+      text: s.trim(),
+      ai_probability: isAI ? 85.0 : isESL ? 25.0 : 12.0,
+      highlight_color: isAI ? "red" : isESL ? "yellow" : "green",
+      reason: isAI ? "Contains AI buzzword triggers and uniform sentence pacing." : "Organic human rhythm."
     }))
   };
 }
