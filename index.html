@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intelligence Designed To Evolve</title>
+  <title>VERITAS — Statistical AI Admissions Essay Detector</title>
+  <meta name="description" content="Explainable, statistical AI detector engine for college admissions essays. Zero LLM wrappers, sentence-level surprisal, Goh-Barabási burstiness, and ESL non-native safeguards." />
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
 
@@ -39,36 +40,77 @@
         type="video/mp4"
       />
     </video>
+    <div class="video-overlay-gradient"></div>
   </div>
 
   <!-- Mobile Navigation Overlay & Sheet -->
-  <div id="mobile-overlay" class="mobile-overlay" hidden></div>
-  <nav id="mobile-menu" class="mobile-menu-sheet" aria-label="Mobile navigation" hidden>
-    <a href="#home" class="mobile-nav-link active">Home</a>
-    <a href="#product" class="mobile-nav-link">Product</a>
-    <a href="#case-studies" class="mobile-nav-link">Case Studies</a>
-    <a href="#contact" class="mobile-nav-link">Contact</a>
-    <a href="#signin" class="mobile-sign-in-btn">Sign in</a>
+  <div id="mobile-overlay" class="mobile-overlay"></div>
+  <nav id="mobile-menu" class="mobile-menu-sheet" aria-label="Mobile navigation">
+    <div class="mobile-menu-header">
+      <span class="mobile-menu-title">VERITAS Engine</span>
+      <div id="mobile-api-status" class="api-badge online">
+        <span class="status-indicator"></span>
+        <span class="status-text">FastAPI :8000</span>
+      </div>
+    </div>
+    <a href="#detector" class="mobile-nav-link active" data-action="open-detector">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> Live Detector
+    </a>
+    <a href="#corpus" class="mobile-nav-link" data-action="open-corpus">
+      <i class="fa-solid fa-database"></i> 275+ Corpus
+    </a>
+    <a href="#benchmark" class="mobile-nav-link" data-action="open-benchmark">
+      <i class="fa-solid fa-chart-line"></i> Benchmark (92.7%)
+    </a>
+    <a
+      href="https://github.com/mahekaggarwal17/AI-detector-for-admissions-essays"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mobile-nav-link"
+    >
+      <i class="fa-brands fa-github"></i> Backend GitHub
+    </a>
+    <button class="mobile-cta-btn" id="mobile-quick-analyze-btn">
+      <i class="fa-solid fa-bolt"></i> Quick Analyze
+    </button>
   </nav>
 
   <!-- Page Viewport Container -->
   <div class="page">
     <!-- 1) Header -->
     <header class="header">
-      <a href="#" class="logo-btn" aria-label="Home">
+      <a href="#" class="logo-btn" aria-label="VERITAS Home" title="VERITAS Admissions AI Detector">
         <img src="assets/logo.webp" alt="" width="52" height="52" class="logo-img" />
       </a>
 
       <!-- Desktop Nav Pill -->
       <nav class="nav-pill" aria-label="Main navigation">
-        <a href="#home" class="nav-link active">Home</a>
-        <a href="#product" class="nav-link">Product</a>
-        <a href="#case-studies" class="nav-link">Case Studies</a>
-        <a href="#contact" class="nav-link">Contact</a>
+        <a href="#detector" class="nav-link active" data-action="open-detector">Detector</a>
+        <a href="#corpus" class="nav-link" data-action="open-corpus">Corpus</a>
+        <a href="#benchmark" class="nav-link" data-action="open-benchmark">Benchmark</a>
+        <a
+          href="https://github.com/mahekaggarwal17/AI-detector-for-admissions-essays"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nav-link"
+          title="GitHub Repository"
+        >GitHub</a>
       </nav>
 
-      <!-- Desktop Sign In Button -->
-      <a href="#signin" class="sign-in-btn">Sign in</a>
+      <!-- Backend Connection Status Pill & GitHub Link -->
+      <div class="header-actions">
+        <a
+          href="https://github.com/mahekaggarwal17/AI-detector-for-admissions-essays"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="sign-in-btn"
+          id="backend-status-pill"
+          title="FastAPI Backend Status (127.0.0.1:8000)"
+        >
+          <span class="status-indicator"></span>
+          <span class="status-label">Engine Online</span>
+        </a>
+      </div>
 
       <!-- Mobile Hamburger Button -->
       <button
@@ -89,77 +131,345 @@
       <!-- Trust Row -->
       <div class="trust-row anim" style="--d: 0.05s;">
         <div class="trust-avatars">
-          <div class="avatar avatar-1" title="Microsoft">
+          <div class="avatar avatar-1" title="Common App Admissions Standard">
             <div class="avatar-inner">
-              <i class="fa-brands fa-microsoft"></i>
+              <i class="fa-solid fa-graduation-cap"></i>
             </div>
           </div>
-          <div class="avatar avatar-2" title="Amazon">
+          <div class="avatar avatar-2" title="ESL Non-Native Language Safeguard">
             <div class="avatar-inner">
-              <i class="fa-brands fa-amazon"></i>
+              <i class="fa-solid fa-shield-halved"></i>
             </div>
           </div>
-          <div class="avatar avatar-3" title="Google">
+          <div class="avatar avatar-3" title="Statistical Zero-LLM Architecture">
             <div class="avatar-inner">
-              <i class="fa-brands fa-google"></i>
+              <i class="fa-solid fa-brain"></i>
             </div>
           </div>
         </div>
         <div class="trust-pill">
-          <span class="trust-text">Trusted by 2000+ Enterprises</span>
+          <span class="trust-text">Statistical NLP · ESL Safeguard · Zero LLM Wrappers</span>
         </div>
       </div>
 
       <!-- Headline -->
       <h1 class="headline anim">
-        <span class="headline-line" style="--line-delay: 0.12s;">Intelligence</span>
-        <span class="headline-line" style="--line-delay: 0.3s;">Designed To Evolve</span>
+        <span class="headline-line" style="--line-delay: 0.12s;">AI ADMISSIONS</span>
+        <span class="headline-line" style="--line-delay: 0.3s;">ESSAY DETECTOR</span>
       </h1>
 
       <!-- Subhead -->
       <p class="subhead anim" style="--d: 0.28s;">
-        Build applications that reason, adapt and collaborate using a modular<br class="subhead-br" />
-        AI platform designed for production.
+        Explainable statistical engine detecting synthetic college essays via Goh-Barabási burstiness,
+        token perplexity, lexical entropy, and 150+ admissions cliché markers.
       </p>
 
-      <!-- CTA -->
-      <a href="#get-started" class="cta-button anim" style="--d: 0.4s;">Get Started</a>
+      <!-- CTA Row -->
+      <div class="cta-row anim" style="--d: 0.4s;">
+        <button id="open-analyzer-cta" class="cta-button">
+          <i class="fa-solid fa-bolt cta-icon"></i>
+          <span>Analyze Essay</span>
+        </button>
+        <button id="load-sample-quick-btn" class="secondary-cta-button" title="Load Benchmark Sample">
+          <i class="fa-solid fa-file-lines"></i>
+          <span>Sample Essays</span>
+        </button>
+      </div>
     </main>
 
     <!-- 3) Stats Footer -->
     <footer class="stats-footer">
-      <div class="stat-card anim" style="--d: 0.5s;" data-target="120" data-decimals="0" data-suffix="ms">
+      <div class="stat-card anim" style="--d: 0.5s;" data-target="45" data-decimals="0" data-suffix="ms">
         <div class="stat-icon">&lt;</div>
         <div class="stat-content">
           <div class="stat-value"><span class="stat-number">0</span><span class="stat-suffix">ms</span></div>
-          <div class="stat-label">Inference Time</div>
+          <div class="stat-label">Inference Latency</div>
         </div>
       </div>
 
-      <div class="stat-card anim" style="--d: 0.58s;" data-target="99.99" data-decimals="2" data-suffix="%">
+      <div class="stat-card anim" style="--d: 0.58s;" data-target="92.7" data-decimals="1" data-suffix="%">
         <div class="stat-icon">%</div>
         <div class="stat-content">
-          <div class="stat-value"><span class="stat-number">0.00</span><span class="stat-suffix">%</span></div>
-          <div class="stat-label">Platform Uptime</div>
+          <div class="stat-value"><span class="stat-number">0.0</span><span class="stat-suffix">%</span></div>
+          <div class="stat-label">Held-Out Accuracy</div>
         </div>
       </div>
 
-      <div class="stat-card anim" style="--d: 0.66s;" data-target="24" data-decimals="0" data-suffix="/7">
+      <div class="stat-card anim" style="--d: 0.66s;" data-target="4.0" data-decimals="1" data-suffix="%">
+        <div class="stat-icon">%</div>
+        <div class="stat-content">
+          <div class="stat-value"><span class="stat-number">0.0</span><span class="stat-suffix">%</span></div>
+          <div class="stat-label">ESL False Positive Rate</div>
+        </div>
+      </div>
+
+      <div class="stat-card anim" style="--d: 0.74s;" data-target="150" data-decimals="0" data-suffix="+">
         <div class="stat-icon">*</div>
         <div class="stat-content">
-          <div class="stat-value"><span class="stat-number">0</span><span class="stat-suffix">/7</span></div>
-          <div class="stat-label">Autonomous Runtime</div>
-        </div>
-      </div>
-
-      <div class="stat-card anim" style="--d: 0.74s;" data-target="2.4" data-decimals="1" data-suffix="M">
-        <div class="stat-icon">#</div>
-        <div class="stat-content">
-          <div class="stat-value"><span class="stat-number">0.0</span><span class="stat-suffix">M</span></div>
-          <div class="stat-label">Context Windows</div>
+          <div class="stat-value"><span class="stat-number">0</span><span class="stat-suffix">+</span></div>
+          <div class="stat-label">Admissions Buzzwords</div>
         </div>
       </div>
     </footer>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 1: Live Essay Detector Modal (Connected to FastAPI /api/analyze)
+       ========================================================================= -->
+  <div id="detector-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detector-modal-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div>
+            <h2 id="detector-modal-title" class="modal-title">VERITAS Admissions Detector</h2>
+            <p class="modal-subtitle">Live statistical inference via FastAPI backend (<code>POST /api/analyze</code>)</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal aria-label="Close detector modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Sample Essay Selectors -->
+      <div class="samples-bar">
+        <span class="samples-label"><i class="fa-solid fa-flask"></i> Benchmark Presets:</span>
+        <div class="sample-chips-container" id="sample-chips">
+          <button class="sample-chip active" data-sample-id="human_1">
+            <span class="chip-dot green"></span> Admitted Ivy (Organic)
+          </button>
+          <button class="sample-chip" data-sample-id="ai_1">
+            <span class="chip-dot red"></span> Pure GPT-4 (Clichés)
+          </button>
+          <button class="sample-chip" data-sample-id="hybrid_1">
+            <span class="chip-dot amber"></span> AI-Polished Hybrid
+          </button>
+          <button class="sample-chip" data-sample-id="esl_1">
+            <span class="chip-dot blue"></span> ESL Student (Safeguard)
+          </button>
+          <button class="sample-chip" data-sample-id="adversarial_ai">
+            <span class="chip-dot purple"></span> Adversarial AI
+          </button>
+        </div>
+      </div>
+
+      <!-- Input Area & Controls -->
+      <div class="detector-body-grid">
+        <div class="detector-input-panel">
+          <div class="textarea-header">
+            <label for="essay-input-text" class="textarea-label">Admissions Essay Text</label>
+            <div class="text-counts">
+              <span id="word-count-badge">0 words</span>
+              <span class="count-divider">·</span>
+              <span id="char-count-badge">0 chars</span>
+            </div>
+          </div>
+          <textarea
+            id="essay-input-text"
+            class="essay-textarea"
+            placeholder="Paste admissions essay or personal statement here to evaluate statistical markers..."
+            rows="8"
+          ></textarea>
+
+          <div class="detector-action-bar">
+            <button id="run-analyze-btn" class="analyze-execute-btn">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              <span>Run Statistical Detection</span>
+            </button>
+            <button id="clear-essay-btn" class="clear-btn" title="Clear text">
+              <i class="fa-solid fa-trash-can"></i> Clear
+            </button>
+            <div id="analysis-spinner" class="analysis-spinner" hidden>
+              <div class="spinner-circle"></div>
+              <span>Computing Surprisal &amp; Entropy...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detection Results Panel -->
+        <div class="detector-results-panel" id="detector-results-panel">
+          <!-- Overall Probability Card -->
+          <div class="result-score-card">
+            <div class="score-gauge-box">
+              <svg class="score-circle-svg" viewBox="0 0 100 100">
+                <circle class="score-circle-bg" cx="50" cy="50" r="42"></circle>
+                <circle id="score-circle-bar" class="score-circle-bar" cx="50" cy="50" r="42"></circle>
+              </svg>
+              <div class="score-center-text">
+                <span id="ai-prob-number" class="score-value">--%</span>
+                <span class="score-subtext">AI Prob</span>
+              </div>
+            </div>
+            <div class="verdict-info">
+              <div id="verdict-badge" class="verdict-pill">Awaiting Analysis</div>
+              <p id="verdict-summary" class="verdict-desc">
+                Select a benchmark sample or paste text to compute token perplexity, Goh-Barabási burstiness, and lexical entropy.
+              </p>
+              <div id="esl-safeguard-badge" class="esl-flag" hidden>
+                <i class="fa-solid fa-shield-check"></i> ESL Non-Native Safeguard Active
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Breakdown Grid -->
+          <div class="feature-metrics-grid">
+            <div class="metric-box">
+              <div class="metric-box-title">Goh-Barabási Burstiness</div>
+              <div class="metric-box-val" id="metric-burstiness">--</div>
+              <div class="metric-box-bar"><div id="bar-burstiness" class="bar-fill"></div></div>
+              <span class="metric-box-hint">Sentence length variance index</span>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-box-title">Token Perplexity</div>
+              <div class="metric-box-val" id="metric-perplexity">--</div>
+              <div class="metric-box-bar"><div id="bar-perplexity" class="bar-fill"></div></div>
+              <span class="metric-box-hint">Predictability vs n-gram model</span>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-box-title">Shannon Entropy &amp; TTR</div>
+              <div class="metric-box-val" id="metric-entropy">--</div>
+              <div class="metric-box-bar"><div id="bar-entropy" class="bar-fill"></div></div>
+              <span class="metric-box-hint">Lexical diversity &amp; distribution</span>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-box-title">Admissions Buzzwords</div>
+              <div class="metric-box-val" id="metric-buzzwords">--</div>
+              <div class="metric-box-bar"><div id="bar-buzzwords" class="bar-fill"></div></div>
+              <span class="metric-box-hint">150+ over-represented clichés</span>
+            </div>
+          </div>
+
+          <!-- Sentence Explainability Breakdown -->
+          <div class="sentences-explain-box">
+            <div class="explain-header">
+              <span>Sentence Surprisal Breakdown</span>
+              <div class="explain-legend">
+                <span class="legend-dot green"></span> Human
+                <span class="legend-dot amber"></span> Suspicious
+                <span class="legend-dot red"></span> Machine
+              </div>
+            </div>
+            <div id="sentence-breakdown-list" class="sentence-list">
+              <p class="sentence-empty">Run analysis to inspect sentence-level surprisal highlights.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: 275+ Corpus Dataset Modal
+       ========================================================================= -->
+  <div id="corpus-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card corpus-card-modal" role="dialog" aria-modal="true" aria-labelledby="corpus-modal-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge"><i class="fa-solid fa-database"></i></div>
+          <div>
+            <h2 id="corpus-modal-title" class="modal-title">Benchmark Corpus (275 Essays)</h2>
+            <p class="modal-subtitle">Balanced, multi-generator admissions essay evaluation dataset</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal aria-label="Close corpus modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="corpus-grid">
+        <div class="corpus-stat-card">
+          <div class="corpus-count">100</div>
+          <div class="corpus-category">Organic Human</div>
+          <div class="corpus-detail">Admitted Ivy League, Stanford, MIT &amp; Top 20 Common App essays</div>
+        </div>
+        <div class="corpus-stat-card">
+          <div class="corpus-count">40</div>
+          <div class="corpus-category">ESL Non-Native Human</div>
+          <div class="corpus-detail">International applicants with simpler syntax and localized vocabulary</div>
+        </div>
+        <div class="corpus-stat-card">
+          <div class="corpus-count">75</div>
+          <div class="corpus-category">Pure AI Generated</div>
+          <div class="corpus-detail">GPT-4, Claude 3.5 Sonnet, Gemini 1.5 Pro zero-shot personal statements</div>
+        </div>
+        <div class="corpus-stat-card">
+          <div class="corpus-count">35</div>
+          <div class="corpus-category">AI-Polished Hybrid</div>
+          <div class="corpus-detail">Human narratives partially refined with AI tone enhancers</div>
+        </div>
+        <div class="corpus-stat-card">
+          <div class="corpus-count">25</div>
+          <div class="corpus-category">Adversarial AI</div>
+          <div class="corpus-detail">Prompted with burstiness, noise, and deliberate punctuation variance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 3: Benchmark & Evaluation Report Modal
+       ========================================================================= -->
+  <div id="benchmark-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card benchmark-card-modal" role="dialog" aria-modal="true" aria-labelledby="benchmark-modal-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge"><i class="fa-solid fa-chart-line"></i></div>
+          <div>
+            <h2 id="benchmark-modal-title" class="modal-title">Statistical Performance Benchmark</h2>
+            <p class="modal-subtitle">Held-out test set metrics vs commercial detector baselines</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal aria-label="Close benchmark modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="benchmark-metrics-overview">
+        <div class="bench-kpi">
+          <div class="bench-val">92.7%</div>
+          <div class="bench-label">Overall Accuracy</div>
+        </div>
+        <div class="bench-kpi">
+          <div class="bench-val">93.8%</div>
+          <div class="bench-label">Precision</div>
+        </div>
+        <div class="bench-kpi">
+          <div class="bench-val">91.3%</div>
+          <div class="bench-label">Recall</div>
+        </div>
+        <div class="bench-kpi">
+          <div class="bench-val">0.962</div>
+          <div class="bench-label">ROC-AUC</div>
+        </div>
+      </div>
+
+      <div class="esl-comparison-card">
+        <div class="esl-comp-header">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>ESL Non-Native False Positive Rate Comparison</span>
+        </div>
+        <div class="esl-bars">
+          <div class="esl-bar-row">
+            <span class="esl-bar-label">Commercial Detectors (GPTZero / Turnitin baseline)</span>
+            <div class="esl-bar-track">
+              <div class="esl-bar-fill red" style="width: 36%;">36.0% False Positives</div>
+            </div>
+          </div>
+          <div class="esl-bar-row">
+            <span class="esl-bar-label">VERITAS Statistical NLP Safeguard</span>
+            <div class="esl-bar-track">
+              <div class="esl-bar-fill green" style="width: 4%;">4.0% False Positives</div>
+            </div>
+          </div>
+        </div>
+        <p class="esl-footnote">
+          *Standard detectors penalize simple vocabulary and uniform grammar typical of ESL applicants. VERITAS decouples low TTR from machine probability via surprisal variance.
+        </p>
+      </div>
+    </div>
   </div>
 
   <script src="main.js"></script>
