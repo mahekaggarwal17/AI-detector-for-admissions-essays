@@ -38,10 +38,17 @@ const BENCHMARK_SAMPLES = {
 let cachedSamples = { ...BENCHMARK_SAMPLES };
 let isBackendOnline = false;
 let currentUser = null;
-let authToken = localStorage.getItem("veritas_token") || null;
+let authToken = null;
 let googleClientId = "603289190186-p11c8d50e82r7s7902s6869g.apps.googleusercontent.com";
 
+// Clear any stale persistent auto-login tokens from earlier sessions
+try {
+  localStorage.removeItem("veritas_token");
+  localStorage.removeItem("veritas_user");
+} catch (e) {}
+
 document.addEventListener("DOMContentLoaded", () => {
+  renderAuthState(); // Explicitly render logged-out guest state initially
   initStatsCounter();
   initMobileMenu();
   initModals();
@@ -73,7 +80,6 @@ async function checkBackendHealth() {
         }
         fetchBackendSamples();
         fetchAuthConfig();
-        if (authToken) fetchUserProfile();
         return;
       }
     }
@@ -87,12 +93,6 @@ async function checkBackendHealth() {
     if (mobileStatus) {
       mobileStatus.classList.remove("online");
       mobileStatus.querySelector(".status-text").textContent = "Offline Mode";
-    }
-    if (authToken && localStorage.getItem("veritas_user")) {
-      try {
-        currentUser = JSON.parse(localStorage.getItem("veritas_user"));
-        renderAuthState();
-      } catch (e) {}
     }
   }
 }
@@ -382,8 +382,6 @@ window.handleGoogleCredentialResponse = async function (response) {
 function setAuthSuccess(token, user) {
   authToken = token;
   currentUser = user;
-  localStorage.setItem("veritas_token", token);
-  localStorage.setItem("veritas_user", JSON.stringify(user));
 
   const authModal = document.getElementById("auth-modal");
   if (authModal) {
