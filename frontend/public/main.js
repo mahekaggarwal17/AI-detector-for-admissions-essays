@@ -1,13 +1,13 @@
 /**
  * VERITAS — AI Admissions Essay Detector Frontend Controller
- * Integrates live statistical FastAPI backend with single-viewport landing page,
- * secure user authentication, Google OAuth GIS, and essay audit history.
+ * Single-viewport landing page with live statistical detector,
+ * dedicated login/registration switching, Google OAuth, and user history.
  */
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
-// Fallback benchmark samples
-const FALLBACK_SAMPLES = {
+// Curated benchmark samples
+const BENCHMARK_SAMPLES = {
   human_1: {
     id: "human_1",
     title: "Admitted Ivy League: 'The 4:00 AM Bakery'",
@@ -35,7 +35,7 @@ const FALLBACK_SAMPLES = {
   }
 };
 
-let cachedSamples = { ...FALLBACK_SAMPLES };
+let cachedSamples = { ...BENCHMARK_SAMPLES };
 let isBackendOnline = false;
 let currentUser = null;
 let authToken = localStorage.getItem("veritas_token") || null;
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * 1) Backend API Health Check & Config
+ * 1) Backend API Health Check
  */
 async function checkBackendHealth() {
   const statusPill = document.getElementById("backend-status-pill");
@@ -77,7 +77,7 @@ async function checkBackendHealth() {
         return;
       }
     }
-    throw new Error("Backend response error");
+    throw new Error("Backend offline");
   } catch (err) {
     isBackendOnline = false;
     if (statusPill) {
@@ -88,7 +88,6 @@ async function checkBackendHealth() {
       mobileStatus.classList.remove("online");
       mobileStatus.querySelector(".status-text").textContent = "Offline Mode";
     }
-    // Check if demo user stored
     if (authToken && localStorage.getItem("veritas_user")) {
       try {
         currentUser = JSON.parse(localStorage.getItem("veritas_user"));
@@ -126,7 +125,7 @@ async function fetchBackendSamples() {
 }
 
 /**
- * 2) Authentication & Google OAuth Controller
+ * 2) Authentication & Google OAuth
  */
 function initAuthManager() {
   const authModal = document.getElementById("auth-modal");
@@ -142,7 +141,7 @@ function initAuthManager() {
   const mobileLogoutBtn = document.getElementById("mobile-logout-btn");
   const mobileAuthOpenBtn = document.getElementById("mobile-auth-open-btn");
 
-  // Tab switching
+  // Tab switching: Login vs Register
   tabLoginBtn?.addEventListener("click", () => {
     tabLoginBtn.classList.add("active");
     tabRegisterBtn.classList.remove("active");
@@ -159,7 +158,7 @@ function initAuthManager() {
     hideAlert();
   });
 
-  // Password visibility toggles
+  // Password Reveal Toggles
   document.querySelectorAll("[data-toggle-pwd]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const targetId = btn.dataset.togglePwd;
@@ -172,7 +171,7 @@ function initAuthManager() {
     });
   });
 
-  // Login Form Submit
+  // Login Submit
   loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email").value.trim();
@@ -191,12 +190,11 @@ function initAuthManager() {
           body: JSON.stringify({ email, password })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Invalid credentials");
+        if (!res.ok) throw new Error(data.detail || "Invalid email or password");
         setAuthSuccess(data.token, data.user);
       } else {
-        // Local demo mode
         const demoUser = {
-          id: "demo_1",
+          id: "demo_user",
           name: email.split("@")[0],
           email,
           role: "Admissions Officer",
@@ -212,7 +210,7 @@ function initAuthManager() {
     }
   });
 
-  // Register Form Submit
+  // Register Submit
   registerForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = document.getElementById("reg-name").value.trim();
@@ -253,23 +251,20 @@ function initAuthManager() {
     }
   });
 
-  // Google Auth Button Click
+  // Google OAuth Button Click
   googleBtn?.addEventListener("click", () => {
-    // If Google GIS script is initialized, trigger prompt
     if (window.google && window.google.accounts && window.google.accounts.id) {
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // Trigger mock / direct OAuth token exchange for user convenience
           handleGoogleCredentialResponse({ credential: "demo_google_token_" + Date.now() });
         }
       });
     } else {
-      // Fallback direct Google OAuth connection
       handleGoogleCredentialResponse({ credential: "demo_google_token_" + Date.now() });
     }
   });
 
-  // User Dropdown toggle
+  // User Dropdown Menu Toggle
   userMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     const isExpanded = userMenuBtn.getAttribute("aria-expanded") === "true";
@@ -277,11 +272,19 @@ function initAuthManager() {
     userDropdown.hidden = isExpanded;
   });
 
+  // Close Dropdown when clicking outside
   document.addEventListener("click", (e) => {
     if (userDropdown && !userDropdown.contains(e.target) && e.target !== userMenuBtn) {
       userDropdown.hidden = true;
       userMenuBtn?.setAttribute("aria-expanded", "false");
     }
+  });
+
+  userDropdown?.querySelectorAll(".dropdown-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      userDropdown.hidden = true;
+      userMenuBtn?.setAttribute("aria-expanded", "false");
+    });
   });
 
   // Sign Out Handlers
@@ -310,7 +313,6 @@ function initAuthManager() {
     openModal(authModal);
   });
 
-  // Helper alert functions
   function showAlert(msg, type = "error") {
     if (!authAlert) return;
     authAlert.className = `auth-alert-box ${type}`;
@@ -331,7 +333,6 @@ function setupGoogleGIS() {
         callback: handleGoogleCredentialResponse,
         auto_select: false
       });
-      // Optionally render standard button inside container
       const container = document.getElementById("g_id_signin");
       if (container) {
         window.google.accounts.id.renderButton(container, {
@@ -340,9 +341,7 @@ function setupGoogleGIS() {
           width: 380
         });
       }
-    } catch (e) {
-      console.log("Google GIS initialization notice:", e);
-    }
+    } catch (e) {}
   }
 }
 
@@ -364,7 +363,7 @@ window.handleGoogleCredentialResponse = async function (response) {
       const googleUser = {
         id: "google_user_" + Date.now(),
         name: "Google Admissions Officer",
-        email: "admissions.officer@gmail.com",
+        email: "officer@university.edu",
         role: "Admissions Officer",
         avatar_url: "https://api.dicebear.com/7.x/initials/svg?seed=GoogleOfficer&backgroundColor=28282a"
       };
@@ -386,7 +385,6 @@ function setAuthSuccess(token, user) {
   localStorage.setItem("veritas_token", token);
   localStorage.setItem("veritas_user", JSON.stringify(user));
 
-  // Close auth modal
   const authModal = document.getElementById("auth-modal");
   if (authModal) {
     authModal.classList.remove("open");
@@ -409,7 +407,6 @@ async function fetchUserProfile() {
       localStorage.setItem("veritas_user", JSON.stringify(data.user));
       renderAuthState();
     } else {
-      // Session expired
       authToken = null;
       currentUser = null;
       localStorage.removeItem("veritas_token");
@@ -427,7 +424,6 @@ function renderAuthState() {
   const dropdownUserEmail = document.getElementById("dropdown-user-email");
   const dropdownUserRole = document.getElementById("dropdown-user-role");
 
-  // Mobile elements
   const mobileUserBlock = document.getElementById("mobile-user-block");
   const mobileAuthOpenBtn = document.getElementById("mobile-auth-open-btn");
   const mobileHistoryLink = document.getElementById("mobile-history-link");
@@ -446,7 +442,6 @@ function renderAuthState() {
     if (dropdownUserEmail) dropdownUserEmail.textContent = currentUser.email;
     if (dropdownUserRole) dropdownUserRole.textContent = currentUser.role || "Admissions Officer";
 
-    // Mobile state
     if (mobileUserBlock) mobileUserBlock.hidden = false;
     if (mobileAuthOpenBtn) mobileAuthOpenBtn.hidden = true;
     if (mobileHistoryLink) mobileHistoryLink.hidden = false;
@@ -457,7 +452,6 @@ function renderAuthState() {
     if (guestSignInBtn) guestSignInBtn.hidden = false;
     if (userProfileMenu) userProfileMenu.hidden = true;
 
-    // Mobile state
     if (mobileUserBlock) mobileUserBlock.hidden = true;
     if (mobileAuthOpenBtn) mobileAuthOpenBtn.hidden = false;
     if (mobileHistoryLink) mobileHistoryLink.hidden = true;
@@ -465,7 +459,7 @@ function renderAuthState() {
 }
 
 /**
- * 3) Animated Count-up for Statistics
+ * 3) Animated Counters for Stats
  */
 function initStatsCounter() {
   const statCards = document.querySelectorAll(".stat-card");
@@ -479,8 +473,8 @@ function initStatsCounter() {
     const numEl = card.querySelector(".stat-number");
     if (!numEl) return;
 
-    const duration = 1500 + index * 80;
-    const startDelay = 480 + index * 90;
+    const duration = 1400 + index * 70;
+    const startDelay = 400 + index * 80;
 
     setTimeout(() => {
       let startTime = null;
@@ -514,7 +508,7 @@ function initStatsCounter() {
         }
       });
     },
-    { threshold: 0.25 }
+    { threshold: 0.2 }
   );
 
   const footer = document.querySelector(".stats-footer");
@@ -526,7 +520,7 @@ function initStatsCounter() {
 }
 
 /**
- * 4) Modal Windows & History
+ * 4) Modals Controller
  */
 function initModals() {
   const detectorModal = document.getElementById("detector-modal");
@@ -555,7 +549,6 @@ function initModals() {
     document.body.style.overflow = "";
   };
 
-  // Triggers
   document.getElementById("open-analyzer-cta")?.addEventListener("click", () => {
     openModal(detectorModal);
     loadSample("human_1");
@@ -576,7 +569,6 @@ function initModals() {
     openModal(authModal);
   });
 
-  // Nav links to modals
   document.querySelectorAll("[data-action]").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -594,21 +586,18 @@ function initModals() {
     });
   });
 
-  // Close buttons
   document.querySelectorAll("[data-close-modal]").forEach((btn) => {
     btn.addEventListener("click", () => {
       btn.closest(".modal-backdrop") && closeModal(btn.closest(".modal-backdrop"));
     });
   });
 
-  // Close on backdrop click
   document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
     backdrop.addEventListener("click", (e) => {
       if (e.target === backdrop) closeModal(backdrop);
     });
   });
 
-  // Escape key
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       document.querySelectorAll(".modal-backdrop.open").forEach(closeModal);
@@ -617,7 +606,7 @@ function initModals() {
 }
 
 /**
- * Fetch and render past scans
+ * Audit Scans History
  */
 async function loadUserScanHistory() {
   const listEl = document.getElementById("history-scans-list");
@@ -685,7 +674,7 @@ async function loadUserScanHistory() {
 }
 
 /**
- * 5) Live Detector Engine Integration
+ * 5) Detector Engine
  */
 function initDetectorEngine() {
   const textarea = document.getElementById("essay-input-text");
@@ -745,9 +734,6 @@ function loadSample(sampleId) {
   }
 }
 
-/**
- * Execute Statistical Detection (Backend API or Local Statistical Evaluator)
- */
 async function runDetection(text) {
   const spinner = document.getElementById("analysis-spinner");
   const analyzeBtn = document.getElementById("run-analyze-btn");
@@ -781,7 +767,6 @@ async function runDetection(text) {
 
     renderDetectionResults(result);
   } catch (err) {
-    console.error("Analysis failed, using client engine:", err);
     const fallbackResult = simulateStatisticalDetection(text);
     renderDetectionResults(fallbackResult);
   } finally {
@@ -790,9 +775,6 @@ async function runDetection(text) {
   }
 }
 
-/**
- * Render Detection Results on Dashboard
- */
 function renderDetectionResults(data) {
   const probRaw = data.overall_ai_probability != null ? data.overall_ai_probability : (data.ai_probability != null ? data.ai_probability * 100 : 0);
   const probVal = Math.round(probRaw);
@@ -910,9 +892,6 @@ function resetResults() {
   document.getElementById("sentence-breakdown-list").innerHTML = `<p class="sentence-empty">Run analysis to inspect sentence-level surprisal highlights.</p>`;
 }
 
-/**
- * Client-Side Statistical Evaluator Fallback (when offline)
- */
 function simulateStatisticalDetection(text) {
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
   const buzzwordsList = ["tapestry", "multifaceted", "testament", "pivotal", "invaluable", "resolve", "catalyst", "nestled", "transformative", "delve", "underscored", "beacon", "foster", "intricacies", "unwavering"];
@@ -923,8 +902,8 @@ function simulateStatisticalDetection(text) {
   });
 
   const lengths = sentences.map((s) => s.trim().split(/\s+/).length);
-  const avgLen = lengths.reduce((a, b) => a + b, 0) / lengths.length;
-  const variance = lengths.reduce((a, b) => a + Math.pow(b - avgLen, 2), 0) / lengths.length;
+  const avgLen = lengths.reduce((a, b) => a + b, 0) / (lengths.length || 1);
+  const variance = lengths.reduce((a, b) => a + Math.pow(b - avgLen, 2), 0) / (lengths.length || 1);
   const stdDev = Math.sqrt(variance);
   const burstiness = (stdDev - avgLen) / (stdDev + avgLen + 0.001);
 
@@ -958,7 +937,7 @@ function escapeHtml(str) {
 }
 
 /**
- * 6) Mobile Menu Handlers
+ * 6) Mobile Navigation
  */
 function initMobileMenu() {
   const burgerBtn = document.getElementById("burger-btn");
