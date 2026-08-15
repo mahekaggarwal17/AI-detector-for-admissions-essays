@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache & build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+
+# Node dependencies & Vite build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.DS_Store
+
+# Logs
+*.log
