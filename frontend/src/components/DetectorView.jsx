@@ -2,21 +2,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText, Upload, Sparkles, Trash2, Loader2,
   AlertCircle, BookOpen, Cpu, ArrowRight, X,
+  ShieldCheck, Activity, BarChart3, Zap, Layers,
+  Copy, Check
 } from 'lucide-react';
 import SentenceHighlighter from './SentenceHighlighter';
 import ExplainabilityPanel from './ExplainabilityPanel';
 
 const CATEGORY_COLORS = {
-  'Human':    { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', text: '#34d399' },
-  'AI':       { bg: 'rgba(244,63,94,0.12)',  border: 'rgba(244,63,94,0.3)',  text: '#fb7185' },
-  'Hybrid':   { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', text: '#fbbf24' },
-  'ESL':      { bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)', text: '#a5b4fc' },
-  'Adversarial': { bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.3)', text: '#c084fc' },
+  'Human':       { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', text: '#34d399', badge: 'badge-human' },
+  'AI':          { bg: 'rgba(244,63,94,0.12)',  border: 'rgba(244,63,94,0.3)',  text: '#fb7185', badge: 'badge-ai' },
+  'Hybrid':      { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', text: '#fbbf24', badge: 'badge-hybrid' },
+  'ESL':         { bg: 'rgba(6,182,212,0.12)',  border: 'rgba(6,182,212,0.3)',  text: '#22d3ee', badge: 'badge-esl' },
+  'Adversarial': { bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.3)', text: '#c084fc', badge: 'badge-info' },
 };
 
 function getCategoryStyle(category = '') {
   const key = Object.keys(CATEGORY_COLORS).find(k => category.includes(k));
-  return CATEGORY_COLORS[key] || { bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.15)', text: 'var(--text-secondary)' };
+  return CATEGORY_COLORS[key] || { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', text: 'var(--text-secondary)', badge: 'badge' };
 }
 
 export default function DetectorView({ samples }) {
@@ -27,6 +29,7 @@ export default function DetectorView({ samples }) {
   const [selectedSentenceId, setSelectedSentenceId] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [activeSampleId, setActiveSampleId] = useState(null);
+  const [copied, setCopied] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -71,6 +74,7 @@ export default function DetectorView({ samples }) {
     reader.onload = (e) => {
       const text = e.target.result;
       setEssayText(text);
+      setActiveSampleId(null);
       analyzeText(text);
     };
     reader.readAsText(file);
@@ -81,6 +85,13 @@ export default function DetectorView({ samples }) {
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file);
+  };
+
+  const handleCopy = () => {
+    if (!essayText) return;
+    navigator.clipboard.writeText(essayText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
   };
 
   useEffect(() => {
@@ -98,36 +109,41 @@ export default function DetectorView({ samples }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}
+    <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: '22px' }}
       className="detector-grid">
       <style>{`
-        @media (max-width: 1024px) {
+        @media (max-width: 1060px) {
           .detector-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      {/* ─── Left Column ─── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* ─── Left Column: Editor & Benchmark Chips ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-        {/* Sample Essays */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
+        {/* Benchmark Chips Card */}
+        <div className="glass-panel" style={{ padding: '22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
-                width: '28px', height: '28px', borderRadius: '8px',
-                background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+                width: '30px', height: '30px', borderRadius: '10px',
+                background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(139,92,246,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <BookOpen size={13} style={{ color: '#a5b4fc' }} />
+                <BookOpen size={14} style={{ color: '#c4b5fd' }} />
               </div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-                Benchmark Samples
-              </span>
+              <div>
+                <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                  Benchmark Essays
+                </span>
+                <span style={{ marginLeft: '8px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                  5 Ground Truth Samples
+                </span>
+              </div>
             </div>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Click to load & analyze</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Click to load & scan</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }} className="stagger-children">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
             {samples?.map((s) => {
               const catStyle = getCategoryStyle(s.category || '');
               const isActive = activeSampleId === s.id;
@@ -135,32 +151,30 @@ export default function DetectorView({ samples }) {
                 <button
                   key={s.id}
                   onClick={() => handleLoadSample(s)}
-                  className={`sample-chip ${analyzing && activeSampleId === s.id ? 'loading' : ''}`}
+                  className={`sample-chip ${isActive ? 'active' : ''} ${analyzing && activeSampleId === s.id ? 'loading' : ''}`}
                   style={{
-                    background: isActive ? catStyle.bg : 'rgba(255,255,255,0.04)',
-                    borderColor: isActive ? catStyle.border : 'rgba(255,255,255,0.06)',
-                    animation: 'slideUp 0.4s ease both',
+                    animation: 'slideUp 0.35s ease both',
                   }}
                 >
                   <div style={{
-                    fontSize: '0.78rem', fontWeight: 600,
-                    color: isActive ? catStyle.text : 'var(--text-primary)',
+                    fontSize: '0.8rem', fontWeight: 700,
+                    color: isActive ? '#fff' : 'var(--text-primary)',
                     lineHeight: 1.3,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     maxWidth: '100%',
                   }}>
                     {s.title}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '4px' }}>
                     <span style={{
-                      fontSize: '0.68rem', fontWeight: 600,
-                      padding: '1px 7px', borderRadius: '9999px',
+                      fontSize: '0.66rem', fontWeight: 700,
+                      padding: '2px 8px', borderRadius: 'var(--radius-pill)',
                       background: catStyle.bg, color: catStyle.text,
                       border: `1px solid ${catStyle.border}`,
                     }}>
                       {s.category}
                     </span>
-                    <ArrowRight size={11} style={{ color: 'var(--text-muted)' }} />
+                    <ArrowRight size={12} style={{ color: isActive ? '#c4b5fd' : 'var(--text-muted)' }} />
                   </div>
                 </button>
               );
@@ -168,24 +182,42 @@ export default function DetectorView({ samples }) {
           </div>
         </div>
 
-        {/* Essay Input */}
-        <div className="glass-panel-glow" style={{ padding: '20px', flexGrow: 1 }}>
-          {/* Toolbar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={15} style={{ color: '#a5b4fc' }} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Essay Editor
+        {/* Essay Editor Studio Frame */}
+        <div className="glass-panel-glow" style={{ padding: '24px', flexGrow: 1, position: 'relative' }}>
+          {/* Top Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '30px', height: '30px', borderRadius: '10px',
+                background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <FileText size={14} style={{ color: '#22d3ee' }} />
+              </div>
+              <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                Essay Forensic Editor
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {essayText && (
+                <button
+                  className="btn-secondary"
+                  onClick={handleCopy}
+                  title="Copy essay"
+                  style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                >
+                  {copied ? <Check size={12} style={{ color: '#10b981' }} /> : <Copy size={12} />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </button>
+              )}
               <label
                 className="btn-secondary"
-                style={{ cursor: 'pointer', padding: '6px 11px', fontSize: '0.75rem' }}
-                title="Upload .txt file"
+                style={{ cursor: 'pointer', padding: '6px 12px', fontSize: '0.75rem' }}
+                title="Upload .txt or .md file"
               >
-                <Upload size={13} />
-                <span>Upload .txt</span>
+                <Upload size={12} />
+                <span>Import File</span>
                 <input
                   ref={fileInputRef}
                   type="file" accept=".txt,.md"
@@ -197,16 +229,16 @@ export default function DetectorView({ samples }) {
                 <button
                   className="btn-ghost"
                   onClick={clearAll}
-                  title="Clear"
-                  style={{ padding: '6px 10px', color: 'var(--neon-rose)' }}
+                  title="Clear text"
+                  style={{ padding: '6px 10px', color: 'var(--accent-rose)' }}
                 >
-                  <X size={13} />
+                  <Trash2 size={13} />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Drag-Drop + Textarea */}
+          {/* Textarea with Drag & Drop */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -216,28 +248,35 @@ export default function DetectorView({ samples }) {
             <textarea
               ref={textareaRef}
               value={essayText}
-              onChange={(e) => setEssayText(e.target.value)}
-              placeholder="Paste a college admissions essay here, or drag & drop a .txt file…"
-              rows={14}
+              onChange={(e) => {
+                setEssayText(e.target.value);
+                setActiveSampleId(null);
+              }}
+              placeholder="Paste a college admissions essay here, or drag & drop a .txt / .md file…"
+              rows={15}
               className="essay-textarea"
               style={{
-                borderColor: dragOver ? 'rgba(99,102,241,0.5)' : undefined,
-                boxShadow: dragOver ? '0 0 0 3px rgba(99,102,241,0.1)' : undefined,
+                borderColor: dragOver ? 'rgba(139,92,246,0.8)' : undefined,
+                boxShadow: dragOver ? '0 0 0 4px rgba(139,92,246,0.2)' : undefined,
               }}
             />
-            {/* Word / Char Counter */}
+
+            {/* Bottom Meta Stats Indicator */}
             <div style={{
-              position: 'absolute', bottom: '12px', right: '12px',
-              display: 'flex', gap: '10px', alignItems: 'center',
-              fontSize: '0.7rem', fontFamily: "'JetBrains Mono', monospace",
+              position: 'absolute', bottom: '14px', right: '14px',
+              display: 'flex', gap: '12px', alignItems: 'center',
+              fontSize: '0.72rem', fontFamily: "'JetBrains Mono', monospace",
               color: 'var(--text-muted)',
-              background: 'rgba(2,4,8,0.8)',
-              padding: '4px 10px', borderRadius: '6px',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(6, 8, 14, 0.85)',
+              backdropFilter: 'blur(12px)',
+              padding: '5px 12px', borderRadius: 'var(--radius-pill)',
+              border: '1px solid rgba(255,255,255,0.08)',
               pointerEvents: 'none',
             }}>
-              <span style={{ color: wordCount > 0 ? 'var(--text-secondary)' : undefined }}>{wordCount} words</span>
-              <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
+              <span style={{ color: wordCount > 0 ? 'var(--text-secondary)' : undefined }}>
+                <strong>{wordCount}</strong> words
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
               <span>{charCount} chars</span>
             </div>
 
@@ -245,45 +284,48 @@ export default function DetectorView({ samples }) {
             {dragOver && (
               <div style={{
                 position: 'absolute', inset: 0,
-                borderRadius: '12px',
-                background: 'rgba(79,70,229,0.1)',
-                border: '2px dashed rgba(99,102,241,0.5)',
+                borderRadius: 'var(--radius-lg)',
+                background: 'rgba(99,102,241,0.18)',
+                backdropFilter: 'blur(10px)',
+                border: '2px dashed rgba(139,92,246,0.8)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.9rem', color: '#a5b4fc', fontWeight: 600, gap: '8px',
+                fontSize: '0.95rem', color: '#c4b5fd', fontWeight: 700, gap: '10px',
               }}>
-                <Upload size={18} /> Drop to upload
+                <Upload size={20} /> Drop essay file to scan
               </div>
             )}
           </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {errorMessage && (
             <div style={{
-              marginTop: '12px', padding: '10px 14px',
-              borderRadius: '10px',
-              background: 'rgba(244,63,94,0.08)',
-              border: '1px solid rgba(244,63,94,0.2)',
-              display: 'flex', alignItems: 'center', gap: '8px',
-              fontSize: '0.8rem', color: '#fb7185',
+              marginTop: '14px', padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(244,63,94,0.1)',
+              border: '1px solid rgba(244,63,94,0.3)',
+              display: 'flex', alignItems: 'center', gap: '10px',
+              fontSize: '0.82rem', color: '#fb7185',
               animation: 'slideIn 0.3s ease both',
             }}>
-              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
               {errorMessage}
             </div>
           )}
 
-          {/* Footer row */}
+          {/* Action Row */}
           <div style={{
-            marginTop: '14px',
+            marginTop: '18px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: '12px',
           }}>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '0.72rem', color: 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              fontSize: '0.74rem', color: 'var(--text-muted)',
             }}>
-              <Cpu size={12} style={{ color: 'rgba(99,102,241,0.6)' }} />
-              Local statistical engine · no data sent to cloud
+              <Cpu size={13} style={{ color: 'rgba(139,92,246,0.7)' }} />
+              <span>Statistical Language Model · 100% Deterministic</span>
             </div>
+
             <button
               className="btn-primary"
               onClick={() => analyzeText()}
@@ -291,13 +333,13 @@ export default function DetectorView({ samples }) {
             >
               {analyzing ? (
                 <>
-                  <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                  Analyzing…
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Computing Forensics…</span>
                 </>
               ) : (
                 <>
-                  <Sparkles size={15} />
-                  Analyze Essay
+                  <Sparkles size={16} />
+                  <span>Run Statistical Scan</span>
                 </>
               )}
             </button>
@@ -305,30 +347,36 @@ export default function DetectorView({ samples }) {
         </div>
       </div>
 
-      {/* ─── Right Column ─── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* ─── Right Column: Forensic Results Deck ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
         {analysisResult ? (
           <>
-            {/* Sentence Highlighter */}
-            <div className="glass-panel" style={{ padding: '20px' }}>
+            {/* Sentence-Level Heatmap Panel */}
+            <div className="glass-panel" style={{ padding: '22px' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                marginBottom: '14px',
+                marginBottom: '16px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{
-                    width: '28px', height: '28px', borderRadius: '8px',
-                    background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+                    width: '30px', height: '30px', borderRadius: '10px',
+                    background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Sparkles size={13} style={{ color: '#a5b4fc' }} />
+                    <Layers size={14} style={{ color: '#c4b5fd' }} />
                   </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Sentence-Level Highlights
-                  </span>
+                  <div>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Sentence-Level Forensic Heatmap
+                    </span>
+                    <span style={{ marginLeft: '8px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      {analysisResult?.sentence_highlights?.length || 0} Sentences
+                    </span>
+                  </div>
                 </div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Click sentence to inspect</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Click to inspect signal</span>
               </div>
+
               <SentenceHighlighter
                 sentenceHighlights={analysisResult.sentence_highlights}
                 selectedSentenceId={selectedSentenceId}
@@ -336,49 +384,59 @@ export default function DetectorView({ samples }) {
               />
             </div>
 
-            {/* Explainability Dashboard */}
+            {/* Explainability & Subscores Deck */}
             <ExplainabilityPanel
               analysisData={analysisResult}
               selectedSentence={selectedSentence}
             />
           </>
         ) : (
-          /* Empty State */
+          /* Empty State Showcase */
           <div className="glass-panel" style={{
-            padding: '60px 32px',
+            padding: '70px 36px',
             textAlign: 'center',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px',
             animation: 'fadeIn 0.5s ease both',
           }}>
-            <div className="animate-float" style={{
-              width: '72px', height: '72px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, rgba(79,70,229,0.2), rgba(124,58,237,0.1))',
-              border: '1px solid rgba(99,102,241,0.2)',
+            <div style={{
+              width: '80px', height: '80px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.12))',
+              border: '1px solid rgba(139,92,246,0.3)',
+              boxShadow: '0 0 35px rgba(139,92,246,0.15)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Sparkles size={32} style={{ color: '#a5b4fc' }} />
+              <Sparkles size={36} style={{ color: '#c4b5fd' }} />
             </div>
+
             <div>
               <h3 style={{
                 fontFamily: "'Outfit', sans-serif",
-                fontSize: '1.25rem', fontWeight: 700,
+                fontSize: '1.35rem', fontWeight: 800,
                 color: 'var(--text-primary)', marginBottom: '10px',
+                letterSpacing: '-0.02em',
               }}>
-                Statistical Detection Workbench
+                Statistical Forensic Command Deck
               </h3>
               <p style={{
-                fontSize: '0.85rem', color: 'var(--text-muted)',
-                maxWidth: '340px', lineHeight: 1.7,
+                fontSize: '0.88rem', color: 'var(--text-secondary)',
+                maxWidth: '380px', lineHeight: 1.75, margin: '0 auto',
               }}>
-                Paste an admissions essay or load a benchmark sample on the left.
-                The engine will analyze token perplexity, sentence burstiness,
-                syntactic uniformity, and AI phrase density — highlighting each sentence with evidence.
+                Paste an admissions essay or select one of the curated benchmark essays on the left.
+                The engine will generate sentence-level perplexity heat maps, Goh-Barabasi burstiness metrics,
+                and ESL safety adjustments.
               </p>
             </div>
+
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {['Perplexity & Surprisal', 'Burstiness Index', 'AI Phrase Density', 'ESL Safeguard'].map(t => (
-                <span key={t} className="badge badge-info" style={{ fontSize: '0.68rem' }}>{t}</span>
+              {[
+                'Perplexity & Surprisal',
+                'Goh-Barabasi Burstiness',
+                'Shannon Entropy',
+                '150+ Admissions Markers',
+                'ESL Safeguard Shield'
+              ].map(t => (
+                <span key={t} className="badge badge-esl" style={{ fontSize: '0.7rem' }}>{t}</span>
               ))}
             </div>
           </div>
