@@ -1,85 +1,50 @@
 import React from 'react';
-import { Eye, Layers } from 'lucide-react';
 
 const LEGEND = [
-  { color: 'green',  dot: '#10b981', label: 'Organic Human',   range: '<35% AI',   badge: 'sentence-green' },
-  { color: 'yellow', dot: '#f59e0b', label: 'Polished / Mixed', range: '35–65%',   badge: 'sentence-yellow' },
-  { color: 'red',    dot: '#f43f5e', label: 'High AI Risk',    range: '>65% AI',   badge: 'sentence-red' },
+  { cls: 's-green', dot: 'var(--green)', label: 'Human',   range: '< 35%' },
+  { cls: 's-amber', dot: 'var(--amber)', label: 'Mixed',   range: '35–65%' },
+  { cls: 's-red',   dot: 'var(--red)',   label: 'High AI', range: '> 65%' },
 ];
 
 export default function SentenceHighlighter({ sentenceHighlights, selectedSentenceId, onSelectSentence }) {
-  if (!sentenceHighlights || sentenceHighlights.length === 0) {
+  if (!sentenceHighlights?.length) {
     return (
-      <div style={{
-        padding: '36px 20px', textAlign: 'center',
-        color: 'var(--text-muted)', fontSize: '0.85rem', fontFamily: "'Inter', sans-serif",
-      }}>
-        Analyze an essay to see sentence-by-sentence statistical highlighting.
+      <div style={{ padding: '36px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: '0.875rem' }}>
+        Analyze an essay to view the sentence-level heatmap.
       </div>
     );
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Legend Header */}
-      <div style={{
-        display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
-        gap: '12px', padding: '10px 16px',
-        borderRadius: 'var(--radius-md)',
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          {LEGEND.map(({ color, dot, label, range }) => (
-            <div key={color} style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              fontSize: '0.74rem',
-            }}>
-              <div style={{
-                background: dot,
-                boxShadow: `0 0 10px ${dot}`,
-                width: '8px', height: '8px',
-                borderRadius: '50%',
-              }} />
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</span>
-              <span style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                color: 'var(--text-muted)', fontSize: '0.7rem',
-              }}>
-                ({range})
-              </span>
-            </div>
-          ))}
-        </div>
+  const greens  = sentenceHighlights.filter(s => s.highlight_color === 'green').length;
+  const yellows = sentenceHighlights.filter(s => s.highlight_color === 'yellow').length;
+  const reds    = sentenceHighlights.filter(s => s.highlight_color === 'red').length;
 
-        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
-          Interactive Forensic Mode
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+        {LEGEND.map(({ cls, dot, label, range }) => (
+          <div key={cls} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+            <span style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{label}</span>
+            <span className="mono" style={{ color: 'var(--fg-3)', fontSize: '0.7rem' }}>{range}</span>
+          </div>
+        ))}
+        <span className="mono" style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--fg-3)' }}>
+          {sentenceHighlights.length} sentences
         </span>
       </div>
 
-      {/* Rendered Sentences Container */}
-      <div style={{
-        padding: '22px',
-        borderRadius: 'var(--radius-lg)',
-        background: 'rgba(6, 8, 14, 0.65)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        color: 'var(--text-primary)',
-        lineHeight: 2,
-        fontSize: '0.94rem',
-        minHeight: '160px',
-        maxHeight: '480px',
-        overflowY: 'auto',
-        fontFamily: "'Inter', sans-serif",
-      }}>
-        {sentenceHighlights.map((s, idx) => {
-          const isSelected = selectedSentenceId === s.id;
-          const colorClass = s.highlight_color === 'red' ? 'sentence-red' : s.highlight_color === 'yellow' ? 'sentence-yellow' : 'sentence-green';
+      {/* Sentence text */}
+      <div className="sentence-block">
+        {sentenceHighlights.map((s) => {
+          const cls = s.highlight_color === 'red' ? 's-red' : s.highlight_color === 'yellow' ? 's-amber' : 's-green';
           return (
             <span
               key={s.id}
+              className={`s-span ${cls} ${selectedSentenceId === s.id ? 'selected' : ''}`}
               onClick={() => onSelectSentence(s.id)}
-              className={`sentence-span ${colorClass} ${isSelected ? 'selected' : ''}`}
-              title={`Sentence #${s.id + 1} · ${s.ai_probability}% AI risk · Click to inspect`}
+              title={`#${s.id + 1} · ${s.ai_probability}% AI risk`}
             >
               {s.text}{' '}
             </span>
@@ -87,26 +52,13 @@ export default function SentenceHighlighter({ sentenceHighlights, selectedSenten
         })}
       </div>
 
-      {/* Stats Summary Strip */}
-      <div style={{
-        display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
-        fontSize: '0.72rem', fontFamily: "'JetBrains Mono', monospace",
-        color: 'var(--text-muted)', padding: '0 4px',
-      }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <span style={{ color: '#34d399', fontWeight: 600 }}>
-            {sentenceHighlights.filter(s => s.highlight_color === 'green').length} Organic Human
-          </span>
-          <span>·</span>
-          <span style={{ color: '#fbbf24', fontWeight: 600 }}>
-            {sentenceHighlights.filter(s => s.highlight_color === 'yellow').length} Polished
-          </span>
-          <span>·</span>
-          <span style={{ color: '#fb7185', fontWeight: 600 }}>
-            {sentenceHighlights.filter(s => s.highlight_color === 'red').length} High AI Risk
-          </span>
-        </div>
-        <span>{sentenceHighlights.length} Total Sentences Scanned</span>
+      {/* Counts strip */}
+      <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem' }}>
+        <span className="mono" style={{ color: 'var(--green)' }}>{greens} human</span>
+        <span style={{ color: 'var(--fg-3)' }}>·</span>
+        <span className="mono" style={{ color: 'var(--amber)' }}>{yellows} mixed</span>
+        <span style={{ color: 'var(--fg-3)' }}>·</span>
+        <span className="mono" style={{ color: 'var(--red)' }}>{reds} high AI</span>
       </div>
     </div>
   );

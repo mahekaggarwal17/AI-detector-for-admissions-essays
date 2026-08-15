@@ -1,325 +1,234 @@
 import React, { useEffect, useState } from 'react';
-import { Database, Binary, ShieldCheck, Layers, Sparkles, BookOpen, Search, CheckCircle2 } from 'lucide-react';
+import { Database, Layers, Binary, ShieldCheck, Search } from 'lucide-react';
 
-/* ── SVG Donut Chart ── */
-function DonutChart({ segments }) {
-  const size = 190, strokeWidth = 24, radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const [animated, setAnimated] = useState(false);
+/* ── Donut Chart ── */
+function Donut({ segments }) {
+  const size = 160, sw = 20, r = (size - sw) / 2;
+  const circ = 2 * Math.PI * r;
+  const [go, setGo] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGo(true), 200); return () => clearTimeout(t); }, []);
 
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(true), 300);
-    return () => clearTimeout(t);
-  }, []);
-
-  let offset = 0;
-  const slices = segments.map((seg) => {
-    const dashArray = (seg.pct / 100) * circumference;
-    const slice = { ...seg, dashArray, currentOffset: offset };
-    offset += dashArray;
-    return slice;
+  let off = 0;
+  const slices = segments.map((s) => {
+    const dash = (s.pct / 100) * circ;
+    const sl = { ...s, dash, off };
+    off += dash;
+    return sl;
   });
-
-  const total = segments.reduce((acc, s) => acc + s.count, 0);
+  const total = segments.reduce((a, s) => a + s.count, 0);
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <defs>
-          {slices.map((s) => (
-            <filter key={`glow-${s.label}`} id={`glow-${s.label}`}>
-              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-              <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          ))}
-        </defs>
-        {/* Track */}
-        <circle cx={size/2} cy={size/2} r={radius}
-          fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} />
-        {/* Segments */}
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg-3)" strokeWidth={sw} />
         {slices.map((s) => (
           <circle
             key={s.label}
-            cx={size/2} cy={size/2} r={radius}
-            fill="none"
-            stroke={s.color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${s.dashArray} ${circumference}`}
-            strokeDashoffset={animated ? circumference - s.currentOffset : circumference}
-            strokeLinecap="round"
-            filter={`url(#glow-${s.label})`}
-            style={{
-              transition: 'stroke-dashoffset 1.3s cubic-bezier(0.34,1.2,0.64,1)',
-              transformOrigin: `${size/2}px ${size/2}px`,
-            }}
+            cx={size/2} cy={size/2} r={r}
+            fill="none" stroke={s.color} strokeWidth={sw}
+            strokeDasharray={`${s.dash} ${circ}`}
+            strokeDashoffset={go ? circ - s.off : circ}
+            strokeLinecap="butt"
+            style={{ transition: 'stroke-dashoffset 1.2s var(--ease-out)', transitionDelay: `${slices.indexOf(s) * 0.1}s` }}
           />
         ))}
       </svg>
-      {/* Center Label */}
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
-          {total}
-        </div>
-        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>
-          Essays
-        </div>
+        <div className="mono" style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--fg)', lineHeight: 1 }}>{total}</div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--fg-3)', fontWeight: 600, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>essays</div>
       </div>
     </div>
   );
 }
 
-const FORMULA_CARDS = [
-  {
-    num: '01', label: 'Token Perplexity & Surprisal', color: '#06b6d4',
-    formula: 'PPL(X) = exp( -1/N · ∑ ln P(wᵢ | w₁…wᵢ₋₁) )',
-    desc: 'Machine prose minimizes surprisal by picking high-likelihood tokens, producing unnaturally flat, low-perplexity curves.',
-  },
-  {
-    num: '02', label: 'Goh-Barabasi Burstiness Index', color: '#8b5cf6',
-    formula: 'B = (σ − μ) / (σ + μ)  ∈ [−1, +1]',
-    desc: 'Human narrative exhibits B > −0.15 (rhythmic fluctuations). AI prose produces B < −0.35 (monotonously uniform length).',
-  },
-  {
-    num: '03', label: 'Shannon Vocabulary Entropy', color: '#f59e0b',
-    formula: 'H(X) = − ∑ p(xᵢ) · log₂ p(xᵢ)',
-    desc: 'Measures lexical richness and root Type-Token Ratio (Guiraud index) to decouple non-native simplicity from robotic uniformity.',
-  },
-  {
-    num: '04', label: 'ESL Non-Native Safeguard Factor', color: '#10b981',
-    formula: 'ESL_Factor = f(CV_burst, 1/Density_AI, Idiomatic_Markers)',
-    desc: 'Suppresses false-positive penalties for international applicants whose sentences have natural human burstiness without AI clichés.',
-  },
+const SEGMENTS = [
+  { label: 'Organic Human',      count: 100, pct: 36.4, color: 'var(--green)' },
+  { label: 'Pure AI-Generated',  count: 100, pct: 36.4, color: 'var(--red)'   },
+  { label: 'AI-Polished Hybrid', count: 50,  pct: 18.2, color: 'var(--amber)' },
+  { label: 'ESL Non-Native',     count: 25,  pct:  9.1, color: 'var(--cyan)'  },
 ];
 
-const CORPUS_SEGMENTS = [
-  { label: 'Organic Human',  count: 100, pct: 36.4, color: '#10b981' },
-  { label: 'Pure AI-Generated', count: 100, pct: 36.4, color: '#f43f5e' },
-  { label: 'AI-Polished Hybrid', count: 50,  pct: 18.2, color: '#f59e0b' },
-  { label: 'ESL Non-Native',    count: 25,  pct:  9.1, color: '#06b6d4' },
+const ROWS = [
+  { label: 'Human Admissions',   color: 'var(--green)', count: 100, source: 'Ivy League & State university personal statements (2018–2023)',     role: 'Baseline: high perplexity, organic burstiness, authentic storytelling.' },
+  { label: 'Pure AI Generated',  color: 'var(--red)',   count: 100, source: 'GPT-4o, Claude 3.5 Sonnet, Gemini 1.5, Llama 3 — zero/few-shot',    role: 'Positive examples: flat surprisal, uniform length, AI transition clichés.' },
+  { label: 'AI-Polished Hybrid', color: 'var(--amber)', count: 50,  source: 'Human essays sentence-edited with ChatGPT',                         role: 'Real-world calibration: localised sentence-level AI probability scoring.' },
+  { label: 'ESL Student Essays', color: 'var(--cyan)',  count: 25,  source: 'International applicants writing in English as a second language',    role: 'ESL Protection Safeguard validation — eliminates false-positive bias.' },
 ];
 
-export default function DatasetView({ datasetInfo }) {
-  const [searchQuery, setSearchQuery] = useState('');
+const FORMULAS = [
+  { n: '01', label: 'Token Perplexity & Surprisal',  color: 'var(--cyan)',   formula: 'PPL(X) = exp( −1/N · ∑ ln P(wᵢ | w₁…wᵢ₋₁) )',      desc: 'AI prose minimises surprisal, producing unnaturally flat, low-perplexity curves.' },
+  { n: '02', label: 'Goh-Barabasi Burstiness Index', color: 'var(--accent)', formula: 'B = (σ − μ) / (σ + μ)  ∈ [−1, +1]',                  desc: 'Human narrative B > −0.15 (rhythmic fluctuations). AI prose B < −0.35 (monotone lengths).' },
+  { n: '03', label: 'Shannon Vocabulary Entropy',    color: 'var(--amber)',  formula: 'H(X) = − ∑ p(xᵢ) · log₂ p(xᵢ)',                      desc: 'Measures lexical richness (Guiraud index TTR) to decouple ESL simplicity from robotic uniformity.' },
+  { n: '04', label: 'ESL Non-Native Safeguard',      color: 'var(--green)',  formula: 'ESL_Factor = f(CV_burst, 1/Density_AI, Idiomatic)',    desc: 'Suppresses false-positive penalties for international applicants with natural human burstiness.' },
+];
 
-  const rows = [
-    { label: 'Human Admissions',   color: '#10b981', count: 100, source: 'Public admitted Ivy League & State university personal statements (2018–2023)', role: 'Establishes baseline human burstiness, high perplexity distributions, and organic storytelling rhythms.' },
-    { label: 'Pure AI Generated',  color: '#f43f5e', count: 100, source: 'GPT-4o, Claude 3.5 Sonnet, Gemini 1.5, Llama 3 — zero-shot and few-shot prompts', role: 'Provides positive examples of flat surprisal profiles, uniform length distributions, and AI transition clichés.' },
-    { label: 'AI-Polished Hybrid', color: '#f59e0b', count: 50,  source: 'Human-authored narratives edited at sentence/paragraph level using ChatGPT', role: 'Simulates real-world student editing, calibrating sentence-level localized probability scoring.' },
-    { label: 'ESL Student Essays', color: '#06b6d4', count: 25,  source: 'International applicants writing in English as a second language', role: 'Critical test set to validate ESL Protection Safeguard metrics and eliminate false-positive bias.' },
-  ];
-
-  const filteredRows = rows.filter(r => 
-    r.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    r.source.toLowerCase().includes(searchQuery.toLowerCase())
+export default function DatasetView() {
+  const [search, setSearch] = useState('');
+  const filtered = ROWS.filter(r =>
+    r.label.toLowerCase().includes(search.toLowerCase()) ||
+    r.source.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div style={{ maxWidth: '1120px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', animation: 'slideUp 0.45s ease both' }}>
-
-      {/* ── Banner Hero Card ── */}
-      <div className="glass-panel-glow" style={{ padding: '32px 36px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
-          <div style={{
-            width: '52px', height: '52px', borderRadius: '16px',
-            background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(139, 92, 246, 0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <Database size={24} style={{ color: '#c4b5fd' }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.72rem', color: '#c4b5fd', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Corpus Intelligence
-              </span>
-              <span className="badge badge-esl">275 Admissions Essays</span>
-            </div>
-
-            <h2 style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-primary)',
-              letterSpacing: '-0.025em', marginBottom: '10px',
-            }}>
-              Calibrated Admissions Essay Benchmark Corpus
-            </h2>
-
-            <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.75 }}>
-              The VERITAS detector is calibrated on a curated corpus of <strong>275 essays</strong> spanning Ivy League admitted essays,
-              frontier LLM synthetic essays (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro, Llama 3), human-AI polished hybrid statements,
-              and non-native ESL essays to eliminate systemic discrimination.
-            </p>
-          </div>
-        </div>
+    <div>
+      {/* ── Hero section ── */}
+      <div className="section anim-fade-up" style={{ paddingTop: 72 }}>
+        <div className="section-label">Corpus Intelligence</div>
+        <h2 className="section-title">Calibrated Benchmark Corpus</h2>
+        <p className="section-sub">
+          275 curated admissions essays spanning Ivy League human writing, frontier LLM
+          outputs (GPT-4o, Claude 3.5, Gemini 1.5), AI-polished hybrid drafts, and
+          non-native ESL essays for bias elimination.
+        </p>
       </div>
 
-      {/* ── Donut Chart + Breakdown Bento Card ── */}
-      <div className="glass-panel" style={{ padding: '28px' }}>
-        <h3 style={{
-          fontFamily: "'Outfit', sans-serif",
-          fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)',
-          display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '22px',
-        }}>
-          <Layers size={17} style={{ color: '#c4b5fd' }} />
-          Corpus Composition Breakdown
-        </h3>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' }}>
-          <DonutChart segments={CORPUS_SEGMENTS} />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1, minWidth: '280px' }}>
-            {CORPUS_SEGMENTS.map((seg) => (
-              <div key={seg.label} style={{
-                padding: '16px 18px', borderRadius: 'var(--radius-md)',
-                background: 'rgba(255,255,255,0.03)',
-                border: `1px solid ${seg.color}33`,
-                boxShadow: `0 0 20px ${seg.color}11`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: seg.color, boxShadow: `0 0 10px ${seg.color}` }} />
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{seg.label}</span>
-                </div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '1.6rem', fontWeight: 800, color: seg.color, lineHeight: 1 }}>
-                  {seg.count}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  {seg.pct}% of total corpus
-                </div>
-              </div>
-            ))}
+      {/* ── Composition ── */}
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="card card-pad-lg">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
+            <Layers size={15} color="var(--fg-3)" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Corpus Composition
+            </span>
           </div>
-        </div>
-      </div>
 
-      {/* ── Searchable Category Table ── */}
-      <div className="glass-panel" style={{ padding: '26px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
-          <h3 style={{
-            fontFamily: "'Outfit', sans-serif",
-            fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)',
-          }}>
-            Corpus Category Details
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 52, flexWrap: 'wrap' }}>
+            <Donut segments={SEGMENTS} />
 
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(0,0,0,0.4)', padding: '6px 12px',
-            borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-subtle)'
-          }}>
-            <Search size={13} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Search category or source…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                background: 'transparent', border: 'none', outline: 'none',
-                color: 'var(--text-primary)', fontSize: '0.78rem', width: '180px'
-              }}
-            />
-          </div>
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '12px 14px' }}>Category</th>
-                <th style={{ padding: '12px 14px', textAlign: 'center' }}>Count</th>
-                <th style={{ padding: '12px 14px' }}>Source & Lineage</th>
-                <th style={{ padding: '12px 14px' }}>Calibration Objective</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row) => (
-                <tr key={row.label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: row.color, flexShrink: 0 }} />
-                      <span style={{ fontWeight: 700, color: row.color }}>{row.label}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px', textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {row.count}
-                  </td>
-                  <td style={{ padding: '14px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>{row.source}</td>
-                  <td style={{ padding: '14px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>{row.role}</td>
-                </tr>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, flex: 1, minWidth: 260 }}>
+              {SEGMENTS.map((s) => (
+                <div key={s.label} style={{
+                  padding: '16px 18px', borderRadius: 'var(--r-lg)',
+                  background: 'var(--bg-2)', border: '1px solid var(--line)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--fg-2)' }}>{s.label}</span>
+                  </div>
+                  <div className="mono" style={{ fontSize: '1.75rem', fontWeight: 700, color: s.color, lineHeight: 1, marginBottom: 4 }}>
+                    {s.count}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--fg-3)' }}>{s.pct}% of corpus</div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Mathematical Formulas Bento Grid ── */}
-      <div className="glass-panel" style={{ padding: '28px' }}>
-        <h3 style={{
-          fontFamily: "'Outfit', sans-serif",
-          fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)',
-          display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px',
-        }}>
-          <Binary size={18} style={{ color: '#c4b5fd' }} />
-          Statistical NLP Formulas & Mathematical Formulations
-        </h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          {FORMULA_CARDS.map((f) => (
-            <div key={f.num} style={{
-              padding: '20px', borderRadius: 'var(--radius-md)',
-              background: 'rgba(6, 8, 14, 0.65)',
-              border: `1px solid ${f.color}28`,
+      {/* ── Category Table ── */}
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div className="card card-pad-lg">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Database size={15} color="var(--fg-3)" />
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Category Details
+              </span>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--bg-2)', padding: '7px 14px',
+              borderRadius: 'var(--r-pill)', border: '1px solid var(--line)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: 800, color: f.color }}>
-                  {f.label}
-                </span>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  FORMULA {f.num}
-                </span>
-              </div>
+              <Search size={13} color="var(--fg-3)" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filter…"
+                style={{
+                  background: 'transparent', border: 'none', outline: 'none',
+                  color: 'var(--fg)', fontSize: '0.8125rem', width: 140,
+                }}
+              />
+            </div>
+          </div>
 
-              <div style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.82rem', padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(0,0,0,0.4)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                color: '#f8fafc', marginBottom: '12px',
-                overflowX: 'auto',
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                  {['Category', 'Count', 'Source & Lineage', 'Calibration Objective'].map((h) => (
+                    <th key={h} style={{
+                      padding: '10px 14px', textAlign: 'left',
+                      fontSize: '0.7rem', fontWeight: 700, color: 'var(--fg-3)',
+                      textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((row) => (
+                  <tr key={row.label} style={{ borderBottom: '1px solid var(--line-s)' }}>
+                    <td style={{ padding: '14px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: row.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: row.color }}>{row.label}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px', textAlign: 'center' }}>
+                      <span className="mono" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--fg)' }}>{row.count}</span>
+                    </td>
+                    <td style={{ padding: '14px', fontSize: '0.8125rem', color: 'var(--fg-2)', lineHeight: 1.6 }}>{row.source}</td>
+                    <td style={{ padding: '14px', fontSize: '0.8125rem', color: 'var(--fg-3)', lineHeight: 1.6 }}>{row.role}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Formulas ── */}
+      <div className="section" style={{ paddingTop: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+          <Binary size={15} color="var(--fg-3)" />
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Statistical NLP Formulas
+          </span>
+        </div>
+        <div className="grid-2">
+          {FORMULAS.map((f) => (
+            <div key={f.n} className="card card-pad">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: f.color }}>{f.label}</span>
+                <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--fg-3)' }}>FORMULA {f.n}</span>
+              </div>
+              <div className="mono" style={{
+                fontSize: '0.8125rem', padding: '10px 14px',
+                background: 'var(--bg)', borderRadius: 'var(--r-md)',
+                border: '1px solid var(--line)', color: 'var(--fg)',
+                marginBottom: 12, overflowX: 'auto', whiteSpace: 'nowrap',
               }}>
                 {f.formula}
               </div>
-
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
-                {f.desc}
-              </p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--fg-3)', lineHeight: 1.65 }}>{f.desc}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Scope & Ethical Safeguard Callout ── */}
-      <div className="glass-panel" style={{
-        padding: '22px 26px',
-        borderLeft: '4px solid rgba(245,158,11,0.8)',
-        background: 'rgba(245,158,11,0.04)',
-      }}>
-        <h3 style={{
-          fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)',
-          display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px',
-        }}>
-          <ShieldCheck size={16} style={{ color: '#fbbf24' }} />
-          Domain Scope & Ethical Safeguards
-        </h3>
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.75, marginBottom: '8px' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>Calibrated Domain:</strong> College admissions personal statements (Common App, Coalition, UC Insights).
-          Engine expects first-person narrative, reflective insight, and natural human length variance.
-        </p>
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.75 }}>
-          <strong style={{ color: 'var(--text-primary)' }}>False-Positive Protection:</strong> Generic detectors heavily penalize non-native English learners due to simpler syntax.
-          Our ESL safeguard decouples low vocabulary complexity from machine generation by rewarding organic sentence burstiness.
-        </p>
+      {/* ── Scope callout ── */}
+      <div className="section" style={{ paddingTop: 0, paddingBottom: 80 }}>
+        <div className="card card-pad" style={{ borderLeft: '3px solid var(--amber)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+            <ShieldCheck size={15} color="var(--amber)" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--fg)' }}>Domain Scope & Ethical Safeguards</span>
+          </div>
+          <p style={{ fontSize: '0.875rem', color: 'var(--fg-2)', lineHeight: 1.75, marginBottom: 8 }}>
+            <strong style={{ color: 'var(--fg)' }}>Calibrated for:</strong> College admissions personal statements
+            (Common App, Coalition, UC Insights). The engine expects first-person narrative,
+            reflective insight, and natural human length variance.
+          </p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--fg-2)', lineHeight: 1.75 }}>
+            <strong style={{ color: 'var(--fg)' }}>ESL Protection:</strong> Generic detectors heavily penalise
+            non-native English learners. Our safeguard decouples low vocabulary complexity from
+            machine generation by rewarding organic sentence burstiness.
+          </p>
+        </div>
       </div>
     </div>
   );
