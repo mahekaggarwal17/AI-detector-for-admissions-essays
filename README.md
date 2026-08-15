@@ -1,84 +1,135 @@
-# Veritas: College Admissions AI Essay Detector
+# VERITAS — AI Admissions Essay Detector
 
-An AI detector specifically designed for college admissions essays: a working web application with an explainable interface that shows **where** text was probably written by a machine and **why** it thinks so.
+> **International Hackathon Edition** · Statistical · Explainable · ESL-Safe
 
----
-
-## Key Features
-
-1. **Statistical & Explainable Engine (Zero LLM API Wrappers)**:
-   - **Perplexity & Surprisal**: Evaluates token predictability against an n-gram language model.
-   - **Sentence Burstiness**: Measures sentence length standard deviation, coefficient of variation ($CV$), and Goh-Barabasi Burstiness Index.
-   - **Syntactic Uniformity**: Evaluates structural rhythm and clause homogeneity.
-   - **Vocabulary & AI Buzzword Density**: Scans for 150+ over-represented AI admissions markers (*"tapestry of life"*, *"pivotal role"*, *"beacon of hope"*, *"fostered a deep"*).
-   - **ESL Non-Native Protection Safeguard**: Prevents non-native English writers from being falsely accused due to simpler vocabulary or repetitive sentence starters.
-
-2. **Interactive Visual Interface**:
-   - **Sentence-Level Highlighting**: Color-codes sentences by AI likelihood (Green = Organic Human, Yellow = Polished/Hybrid, Red = High AI Risk).
-   - **Sentence Inspector**: Click any sentence to reveal exact line-level metrics, low-surprisal ratio, matched AI phrase triggers, and evidence reasons.
-   - **Visual Evidence Dashboard ("Why It Thinks So")**: Detailed natural language key observations breaking down perplexity, burstiness, vocabulary markers, and ESL safeguard status.
-   - **Pre-Loaded Benchmark Samples**: One-click testing with admitted Ivy League human essays, pure AI essays, hybrid polished essays, ESL student essays, and adversarial AI essays.
-
-3. **Corpus & Data Documentation**:
-   - 275 college admissions essays (Human, Pure AI, Hybrid, ESL).
-   - Full documentation of sourcing, composition, and domain limitations in `DATASET_DOCUMENTATION.md` and the interactive UI tab.
-
-4. **Honest Accuracy & Error Analysis**:
-   - Held-out test performance (92.7% Accuracy, 93.8% Precision, 91.3% Recall, 92.5% F1).
-   - ESL False Positive Audit (4.0% FPR vs 36.0% for generic detectors).
-   - Deep-dive technical post-mortems on **3 Confidently Wrong Cases** in `EVALUATION_REPORT.md` and the interactive UI tab.
+A working web application that detects AI-generated college admissions essays with **sentence-level explainability** and a cinematic dark UI. Built without any LLM API wrappers — pure statistical NLP.
 
 ---
 
-## Quick Start & Running Locally
+## ✨ Live Demo
 
-### 1. Start FastAPI Backend Server
+**[veritas-theta-cyan.vercel.app](https://veritas-theta-cyan.vercel.app)**
+
+---
+
+## 🏆 What Makes This Hackathon-Level
+
+### Design System
+- **Aurora gradient background** with animated orbs & CSS grid overlay
+- **Outfit + Inter + JetBrains Mono** typography stack
+- **Animated glassmorphism** with layered shadows and glow effects
+- **Micro-animations** — slide-up reveals, staggered list entrances, floating elements
+
+### Detector Tab — Command Center
+- **Animated circular gauge** for overall AI probability score (SVG + CSS animation)
+- **Roll-up number counters** — values animate from 0 to target on result arrival
+- **Animated progress bars** with neon glow matching each metric color
+- **Staggered sentence highlights** — each sentence fades in with delay
+- **Drag-and-drop file upload** + category-colored sample chips
+- **Sentence inspector** — click any sentence to expand metrics inline
+
+### Evaluation Tab — Research-Grade Report
+- **Animated metric cards** with color-coded top borders
+- **Visual comparison bar** (36% vs 4% ESL FPR) animates on load
+- **Smooth case-study transitions** with animated reveal
+- **Animated number counters** for accuracy / precision / F1 / AUC
+
+### Dataset Tab — Corpus Explorer
+- **Animated SVG donut chart** for corpus composition breakdown
+- **Glowing color-coded corpus cards** per category
+- **Formula blocks** in JetBrains Mono with syntax-colored output
+- **Responsive data table** with hover effects
+
+---
+
+## 🧮 Detection Engine (Zero LLM Wrappers)
+
+| Feature | Description |
+|---------|-------------|
+| **Perplexity & Surprisal** | Token predictability against n-gram language model |
+| **Goh-Barabasi Burstiness** | `B = (σ−μ)/(σ+μ)` sentence length variance index |
+| **Syntactic Uniformity** | Shannon entropy + Type-Token Ratio |
+| **AI Buzzword Density** | 150+ over-represented admissions clichés |
+| **ESL Safeguard** | Decouples non-native English from machine generation |
+
+**Held-out test performance:** 92.7% Accuracy · 93.8% Precision · 91.3% Recall · 92.5% F1 · 0.962 AUC
+
+**ESL False Positive Rate:** 4.0% (vs 36.0% for generic detectors)
+
+---
+
+## 🗂️ Architecture
+
+```
+AI-detector-for-admissions-essays/
+├── backend/
+│   ├── engine/
+│   │   ├── detector.py          # Master statistical AI detector engine
+│   │   ├── perplexity.py        # Token perplexity & surprisal calculator
+│   │   ├── burstiness.py        # Sentence length CV & Goh-Barabasi burstiness
+│   │   ├── vocabulary.py        # TTR, Shannon entropy, 150+ AI buzzwords
+│   │   └── esl_safeguard.py     # ESL non-native false-positive safeguard
+│   ├── data/
+│   │   ├── dataset.py           # Dataset metadata & 3 failure cases
+│   │   └── samples.py           # Pre-loaded benchmark sample essays
+│   └── main.py                  # FastAPI server endpoints
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── DetectorView.jsx         # Command center layout + drag-drop
+│   │   │   ├── SentenceHighlighter.jsx  # Staggered animated highlights
+│   │   │   ├── ExplainabilityPanel.jsx  # Circular gauge + animated bars
+│   │   │   ├── DatasetView.jsx          # SVG donut chart + formulas
+│   │   │   └── EvaluationView.jsx       # Metric cards + comparison bars
+│   │   ├── App.jsx              # Hero header + animated ticker + navbar
+│   │   └── index.css            # Aurora design system + all animations
+│   └── package.json
+├── DATASET_DOCUMENTATION.md
+├── EVALUATION_REPORT.md
+└── README.md
+```
+
+---
+
+## 🚀 Running Locally
+
+### 1. Start FastAPI Backend
+
 ```bash
 # Activate virtual environment
 venv\Scripts\activate
 
-# Navigate to backend and run FastAPI server
+# Run FastAPI on port 8000
 cd backend
 python -m uvicorn main:app --reload --port 8000
 ```
-Backend will run at `http://127.0.0.1:8000`.
+
+Backend: **http://127.0.0.1:8000**
 
 ### 2. Start React + Vite Frontend
+
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
-Frontend will run at `http://localhost:5173`.
+
+Frontend: **http://localhost:5173**
 
 ---
 
-## Project Architecture
+## 📊 Dataset Composition
 
-```
-ai-essay-detector/
-├── backend/
-│   ├── engine/
-│   │   ├── detector.py       # Master statistical AI detector engine
-│   │   ├── perplexity.py     # Token perplexity & surprisal calculator
-│   │   ├── burstiness.py     # Sentence length CV & Goh-Barabasi burstiness
-│   │   ├── vocabulary.py     # TTR, Shannon entropy, and 150+ AI buzzwords
-│   │   └── esl_safeguard.py  # ESL non-native false-positive safeguard
-│   ├── data/
-│   │   ├── dataset.py        # Dataset metadata & 3 failure cases
-│   │   └── samples.py        # Pre-loaded benchmark sample essays
-│   └── main.py               # FastAPI server endpoints
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── DetectorView.jsx        # Editor, highlighter, evidence dashboard
-│   │   │   ├── SentenceHighlighter.jsx # Sentence-level interactive visualizer
-│   │   │   ├── ExplainabilityPanel.jsx # "Why It Thinks So" evidence cards
-│   │   │   ├── DatasetView.jsx         # Corpus breakdown & math formulas
-│   │   │   └── EvaluationView.jsx      # Test metrics & 3 failure cases
-│   │   ├── App.jsx                     # Navbar & tab router
-│   │   └── index.css                   # Aurora dark-mode glassmorphism styles
-│   └── package.json
-├── DATASET_DOCUMENTATION.md  # Detailed dataset composition & limitations
-├── EVALUATION_REPORT.md      # Held-out test results & failure analysis
-└── README.md
-```
+| Category | Count | Source |
+|----------|-------|--------|
+| Human Admissions | 100 | Admitted Ivy League & State essays (2018–2023) |
+| Pure AI Generated | 100 | GPT-4o, Claude 3.5, Gemini 1.5, Llama 3 |
+| AI-Polished Hybrid | 50 | Human essays edited with ChatGPT |
+| ESL Student Essays | 25 | International applicants |
+
+See [DATASET_DOCUMENTATION.md](DATASET_DOCUMENTATION.md) for full sourcing details.
+See [EVALUATION_REPORT.md](EVALUATION_REPORT.md) for held-out test results and 3 failure case post-mortems.
+
+---
+
+*Built with FastAPI + React + Vite · Statistical NLP · No LLM API Dependencies*

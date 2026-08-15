@@ -1,191 +1,303 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Upload, 
-  Sparkles, 
-  Trash2, 
-  Loader2, 
-  CheckCircle2, 
-  AlertCircle,
-  HelpCircle,
-  BookOpen
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  FileText, Upload, Sparkles, Trash2, Loader2,
+  AlertCircle, BookOpen, Cpu, ArrowRight, X,
 } from 'lucide-react';
 import SentenceHighlighter from './SentenceHighlighter';
 import ExplainabilityPanel from './ExplainabilityPanel';
 
-export default function DetectorView({ samples, onSelectSample }) {
+const CATEGORY_COLORS = {
+  'Human':    { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', text: '#34d399' },
+  'AI':       { bg: 'rgba(244,63,94,0.12)',  border: 'rgba(244,63,94,0.3)',  text: '#fb7185' },
+  'Hybrid':   { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', text: '#fbbf24' },
+  'ESL':      { bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)', text: '#a5b4fc' },
+  'Adversarial': { bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.3)', text: '#c084fc' },
+};
+
+function getCategoryStyle(category = '') {
+  const key = Object.keys(CATEGORY_COLORS).find(k => category.includes(k));
+  return CATEGORY_COLORS[key] || { bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.15)', text: 'var(--text-secondary)' };
+}
+
+export default function DetectorView({ samples }) {
   const [essayText, setEssayText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedSentenceId, setSelectedSentenceId] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [activeSampleId, setActiveSampleId] = useState(null);
+  const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Auto-analyze when sample essay is loaded
-  const handleLoadSample = (sample) => {
-    setEssayText(sample.text);
-    analyzeText(sample.text);
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target.result;
-        setEssayText(text);
-        analyzeText(text);
-      };
-      reader.readAsText(file);
-    }
-  };
+  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+  const charCount = essayText.length;
+  const selectedSentence = analysisResult?.sentence_highlights?.find(s => s.id === selectedSentenceId);
 
   const analyzeText = async (textToAnalyze) => {
     const text = textToAnalyze !== undefined ? textToAnalyze : essayText;
-    if (!text || text.strip?.() === '' || text.length < 20) {
-      setErrorMessage('Please paste an essay with at least 2-3 sentences (minimum 20 characters).');
+    if (!text || text.length < 20) {
+      setErrorMessage('Please paste an essay with at least 2–3 sentences (min 20 characters).');
       return;
     }
-
     setAnalyzing(true);
     setErrorMessage('');
     setSelectedSentenceId(null);
-
+    setAnalysisResult(null);
     try {
       const response = await fetch('http://127.0.0.1:8000/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text }),
       });
-
-      if (!response.ok) {
-        throw new Error('Analysis API request failed.');
-      }
-
-      const data = await response.json();
-      setAnalysisResult(data);
-    } catch (err) {
-      console.error(err);
-      setErrorMessage('Failed to connect to local backend detector engine. Make sure FastAPI server is running.');
+      if (!response.ok) throw new Error('API failed');
+      setAnalysisResult(await response.json());
+    } catch {
+      setErrorMessage('Failed to connect to backend. Make sure FastAPI is running on :8000.');
     } finally {
       setAnalyzing(false);
     }
   };
 
-  // Select first sample by default on mount if empty
+  const handleLoadSample = (sample) => {
+    setEssayText(sample.text);
+    setActiveSampleId(sample.id);
+    analyzeText(sample.text);
+  };
+
+  const handleFileUpload = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      setEssayText(text);
+      analyzeText(text);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  };
+
   useEffect(() => {
     if (samples && samples.length > 0 && !essayText) {
       handleLoadSample(samples[0]);
     }
   }, [samples]);
 
-  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
-  const charCount = essayText.length;
-
-  const selectedSentence = analysisResult?.sentence_highlights?.find(s => s.id === selectedSentenceId);
+  const clearAll = () => {
+    setEssayText('');
+    setAnalysisResult(null);
+    setErrorMessage('');
+    setSelectedSentenceId(null);
+    setActiveSampleId(null);
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      {/* Left Column: Text Input & Pre-loaded Samples */}
-      <div className="lg:col-span-6 space-y-6">
-        {/* Sample Essays Launcher */}
-        <div className="glass-panel p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <span>Load Pre-Loaded Admissions Benchmark Samples:</span>
-            </h3>
-            <span className="text-[11px] text-gray-400">Click any sample to test</span>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}
+      className="detector-grid">
+      <style>{`
+        @media (max-width: 1024px) {
+          .detector-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* ─── Left Column ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+        {/* Sample Essays */}
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '8px',
+                background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <BookOpen size={13} style={{ color: '#a5b4fc' }} />
+              </div>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                Benchmark Samples
+              </span>
+            </div>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Click to load & analyze</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {samples?.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleLoadSample(s)}
-                className="p-3 rounded-lg bg-gray-900/60 border border-white/5 text-left hover:border-indigo-500/50 hover:bg-gray-800/80 transition-all group"
-              >
-                <div className="text-xs font-semibold text-white group-hover:text-indigo-300 truncate">
-                  {s.title}
-                </div>
-                <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
-                  <span>{s.category}</span>
-                  <span className="text-indigo-400 font-medium">Load & Analyze &rarr;</span>
-                </div>
-              </button>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }} className="stagger-children">
+            {samples?.map((s) => {
+              const catStyle = getCategoryStyle(s.category || '');
+              const isActive = activeSampleId === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleLoadSample(s)}
+                  className={`sample-chip ${analyzing && activeSampleId === s.id ? 'loading' : ''}`}
+                  style={{
+                    background: isActive ? catStyle.bg : 'rgba(255,255,255,0.04)',
+                    borderColor: isActive ? catStyle.border : 'rgba(255,255,255,0.06)',
+                    animation: 'slideUp 0.4s ease both',
+                  }}
+                >
+                  <div style={{
+                    fontSize: '0.78rem', fontWeight: 600,
+                    color: isActive ? catStyle.text : 'var(--text-primary)',
+                    lineHeight: 1.3,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    maxWidth: '100%',
+                  }}>
+                    {s.title}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <span style={{
+                      fontSize: '0.68rem', fontWeight: 600,
+                      padding: '1px 7px', borderRadius: '9999px',
+                      background: catStyle.bg, color: catStyle.text,
+                      border: `1px solid ${catStyle.border}`,
+                    }}>
+                      {s.category}
+                    </span>
+                    <ArrowRight size={11} style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Essay Input Card */}
-        <div className="glass-panel p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-bold text-white">
-              <FileText className="w-4 h-4 text-indigo-400" />
-              <span>Admissions Essay Input Editor</span>
+        {/* Essay Input */}
+        <div className="glass-panel-glow" style={{ padding: '20px', flexGrow: 1 }}>
+          {/* Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileText size={15} style={{ color: '#a5b4fc' }} />
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Essay Editor
+              </span>
             </div>
-
-            <div className="flex items-center gap-2">
-              {/* File Upload */}
-              <label className="btn-secondary text-xs cursor-pointer">
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload .txt</span>
-                <input type="file" accept=".txt,.md" onChange={handleFileUpload} className="hidden" />
-              </label>
-
-              {/* Clear Button */}
-              <button
-                onClick={() => { setEssayText(''); setAnalysisResult(null); setErrorMessage(''); }}
-                className="btn-secondary text-xs text-rose-400 hover:text-rose-300"
-                title="Clear text"
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label
+                className="btn-secondary"
+                style={{ cursor: 'pointer', padding: '6px 11px', fontSize: '0.75rem' }}
+                title="Upload .txt file"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+                <Upload size={13} />
+                <span>Upload .txt</span>
+                <input
+                  ref={fileInputRef}
+                  type="file" accept=".txt,.md"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleFileUpload(e.target.files[0])}
+                />
+              </label>
+              {essayText && (
+                <button
+                  className="btn-ghost"
+                  onClick={clearAll}
+                  title="Clear"
+                  style={{ padding: '6px 10px', color: 'var(--neon-rose)' }}
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Text Area */}
-          <div className="relative">
+          {/* Drag-Drop + Textarea */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            style={{ position: 'relative' }}
+          >
             <textarea
+              ref={textareaRef}
               value={essayText}
               onChange={(e) => setEssayText(e.target.value)}
-              placeholder="Paste college admissions essay here..."
+              placeholder="Paste a college admissions essay here, or drag & drop a .txt file…"
               rows={14}
-              className="w-full p-4 rounded-xl bg-gray-950/80 border border-white/10 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-all font-sans text-sm leading-relaxed resize-y"
+              className="essay-textarea"
+              style={{
+                borderColor: dragOver ? 'rgba(99,102,241,0.5)' : undefined,
+                boxShadow: dragOver ? '0 0 0 3px rgba(99,102,241,0.1)' : undefined,
+              }}
             />
-
-            <div className="absolute bottom-3 right-4 text-[11px] font-mono text-gray-400 flex gap-3 pointer-events-none bg-gray-900/80 px-2.5 py-1 rounded-md border border-white/5">
-              <span>{wordCount} words</span>
+            {/* Word / Char Counter */}
+            <div style={{
+              position: 'absolute', bottom: '12px', right: '12px',
+              display: 'flex', gap: '10px', alignItems: 'center',
+              fontSize: '0.7rem', fontFamily: "'JetBrains Mono', monospace",
+              color: 'var(--text-muted)',
+              background: 'rgba(2,4,8,0.8)',
+              padding: '4px 10px', borderRadius: '6px',
+              border: '1px solid rgba(255,255,255,0.06)',
+              pointerEvents: 'none',
+            }}>
+              <span style={{ color: wordCount > 0 ? 'var(--text-secondary)' : undefined }}>{wordCount} words</span>
+              <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
               <span>{charCount} chars</span>
             </div>
+
+            {/* Drag Overlay */}
+            {dragOver && (
+              <div style={{
+                position: 'absolute', inset: 0,
+                borderRadius: '12px',
+                background: 'rgba(79,70,229,0.1)',
+                border: '2px dashed rgba(99,102,241,0.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.9rem', color: '#a5b4fc', fontWeight: 600, gap: '8px',
+              }}>
+                <Upload size={18} /> Drop to upload
+              </div>
+            )}
           </div>
 
+          {/* Error */}
           {errorMessage && (
-            <div className="p-3 rounded-lg bg-rose-950/50 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMessage}</span>
+            <div style={{
+              marginTop: '12px', padding: '10px 14px',
+              borderRadius: '10px',
+              background: 'rgba(244,63,94,0.08)',
+              border: '1px solid rgba(244,63,94,0.2)',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              fontSize: '0.8rem', color: '#fb7185',
+              animation: 'slideIn 0.3s ease both',
+            }}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+              {errorMessage}
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2">
-            <div className="text-xs text-gray-400 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <span>Local statistical feature extraction (Zero LLM wrapper APIs)</span>
+          {/* Footer row */}
+          <div style={{
+            marginTop: '14px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.72rem', color: 'var(--text-muted)',
+            }}>
+              <Cpu size={12} style={{ color: 'rgba(99,102,241,0.6)' }} />
+              Local statistical engine · no data sent to cloud
             </div>
-
             <button
+              className="btn-primary"
               onClick={() => analyzeText()}
               disabled={analyzing || !essayText.trim()}
-              className="btn-primary"
             >
               {analyzing ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Calculating Statistics...</span>
+                  <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                  Analyzing…
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Analyze Essay Now</span>
+                  <Sparkles size={15} />
+                  Analyze Essay
                 </>
               )}
             </button>
@@ -193,20 +305,30 @@ export default function DetectorView({ samples, onSelectSample }) {
         </div>
       </div>
 
-      {/* Right Column: Sentence Visualizer & Explainability Dashboard */}
-      <div className="lg:col-span-6 space-y-6">
+      {/* ─── Right Column ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {analysisResult ? (
           <>
-            {/* Interactive Sentence Visualizer */}
-            <div className="glass-panel p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                  <span>Sentence-Level AI Highlighting</span>
-                </h3>
-                <span className="text-xs text-gray-400">Click sentence to inspect evidence</span>
+            {/* Sentence Highlighter */}
+            <div className="glass-panel" style={{ padding: '20px' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: '14px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '8px',
+                    background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Sparkles size={13} style={{ color: '#a5b4fc' }} />
+                  </div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Sentence-Level Highlights
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Click sentence to inspect</span>
               </div>
-
               <SentenceHighlighter
                 sentenceHighlights={analysisResult.sentence_highlights}
                 selectedSentenceId={selectedSentenceId}
@@ -214,24 +336,60 @@ export default function DetectorView({ samples, onSelectSample }) {
               />
             </div>
 
-            {/* Explainability Report ("Why It Thinks So") */}
+            {/* Explainability Dashboard */}
             <ExplainabilityPanel
               analysisData={analysisResult}
               selectedSentence={selectedSentence}
             />
           </>
         ) : (
-          <div className="glass-panel p-12 text-center space-y-4 text-gray-400">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-950/50 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
-              <Sparkles className="w-8 h-8" />
+          /* Empty State */
+          <div className="glass-panel" style={{
+            padding: '60px 32px',
+            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
+            animation: 'fadeIn 0.5s ease both',
+          }}>
+            <div className="animate-float" style={{
+              width: '72px', height: '72px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, rgba(79,70,229,0.2), rgba(124,58,237,0.1))',
+              border: '1px solid rgba(99,102,241,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Sparkles size={32} style={{ color: '#a5b4fc' }} />
             </div>
-            <h3 className="text-lg font-bold text-white">Statistical AI Detection Workbench</h3>
-            <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
-              Paste an admissions essay or click a pre-loaded sample on the left. The engine will extract token perplexities, sentence length burstiness, syntactic rhythm uniformity, and AI phrase density to highlight machine-generated passages with visible evidence.
-            </p>
+            <div>
+              <h3 style={{
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: '1.25rem', fontWeight: 700,
+                color: 'var(--text-primary)', marginBottom: '10px',
+              }}>
+                Statistical Detection Workbench
+              </h3>
+              <p style={{
+                fontSize: '0.85rem', color: 'var(--text-muted)',
+                maxWidth: '340px', lineHeight: 1.7,
+              }}>
+                Paste an admissions essay or load a benchmark sample on the left.
+                The engine will analyze token perplexity, sentence burstiness,
+                syntactic uniformity, and AI phrase density — highlighting each sentence with evidence.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {['Perplexity & Surprisal', 'Burstiness Index', 'AI Phrase Density', 'ESL Safeguard'].map(t => (
+                <span key={t} className="badge badge-info" style={{ fontSize: '0.68rem' }}>{t}</span>
+              ))}
+            </div>
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
